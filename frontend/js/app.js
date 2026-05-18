@@ -114,7 +114,7 @@ const App = (() => {
       // Refresh dashboard if active
       if (currentModule === 'dashboard') Dashboard.refresh();
     } catch (err) {
-      toast(`Erreur sync Pipeline: ${err.message}`, 'error');
+      if (!API.isDemoMode()) toast(`Erreur sync Pipeline: ${err.message}`, 'error');
     } finally {
       btn.querySelector('i').classList.remove('fa-spin');
     }
@@ -173,6 +173,28 @@ const App = (() => {
     return 'Hiver';
   }
 
+  function showDemoBanner() {
+    // Bannière démo en haut de l'écran
+    const banner = document.createElement('div');
+    banner.id = 'demo-banner';
+    banner.innerHTML = `
+      <div style="background:linear-gradient(90deg,rgba(212,175,55,0.15),rgba(212,175,55,0.08));
+        border-bottom:1px solid rgba(212,175,55,0.3);padding:8px 24px;
+        display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+          <span style="background:var(--gold);color:var(--black);padding:2px 8px;border-radius:4px;font-weight:800;font-size:11px">DÉMO</span>
+          <span style="color:var(--text-secondary)">Mode démonstration — données fictives affichées. Pour connecter votre vrai backend :</span>
+          <button onclick="App.promptApiSetup()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:12.5px;font-weight:600;padding:0">
+            Configurer le backend Apps Script →
+          </button>
+        </div>
+        <button onclick="document.getElementById('demo-banner').remove()"
+          style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px">✕</button>
+      </div>
+    `;
+    document.querySelector('.main-content').insertBefore(banner, document.querySelector('.topbar'));
+  }
+
   function init() {
     // Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -193,9 +215,14 @@ const App = (() => {
       document.getElementById('sidebar').classList.toggle('open');
     });
 
-    // Check API URL
-    if (!API.getUrl()) {
-      setTimeout(promptApiSetup, 800);
+    // Mode démo — afficher bannière si pas de backend
+    if (API.isDemoMode()) {
+      showDemoBanner();
+      // Badge generator pour le projet Pipeline démo
+      setTimeout(() => {
+        document.getElementById('badge-generator').style.display = 'inline-flex';
+        document.getElementById('badge-generator').textContent = '1';
+      }, 1500);
     }
 
     // Init dashboard
