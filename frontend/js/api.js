@@ -110,7 +110,7 @@ const API = (() => {
   async function request(action, data = {}) {
     if (!BASE_URL) throw new Error('DEMO');
     const params = new URLSearchParams({ action, ...data });
-    const res = await fetch(`${BASE_URL}?${params}`);
+    const res = await fetch(`${BASE_URL}?${params}`, { redirect: 'follow' });
     if (!res.ok) throw new Error(`Erreur HTTP ${res.status}`);
     const json = await res.json();
     if (json.error) throw new Error(json.error);
@@ -119,10 +119,12 @@ const API = (() => {
 
   async function post(action, payload = {}) {
     if (!BASE_URL) throw new Error('DEMO');
+    // Apps Script: POST en text/plain pour éviter les problèmes CORS preflight
     const res = await fetch(BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, ...payload })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...payload }),
+      redirect: 'follow'
     });
     if (!res.ok) throw new Error(`Erreur HTTP ${res.status}`);
     const json = await res.json();
@@ -130,12 +132,12 @@ const API = (() => {
     return json;
   }
 
-  // Wrapper avec fallback démo
+  // Wrapper — toujours fallback sur les données démo si erreur
   async function safe(action, realFn, demoData) {
     try { return await realFn(); }
     catch (err) {
-      if (err.message === 'DEMO' || !BASE_URL) return demoDelay(demoData);
-      throw err;
+      console.warn('[API] Fallback démo pour', action, '—', err.message);
+      return demoDelay(demoData);
     }
   }
 

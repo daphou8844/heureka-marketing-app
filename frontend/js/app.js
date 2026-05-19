@@ -21,27 +21,47 @@ const App = (() => {
   function navigate(module) {
     if (!modules[module]) return;
 
-    // Hide all views
+    // Cacher toutes les vues
     document.querySelectorAll('.module-view').forEach(v => v.classList.add('hidden'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-    // Show target
-    document.getElementById(`view-${module}`).classList.remove('hidden');
-    document.querySelector(`[data-module="${module}"]`).classList.add('active');
-    document.getElementById('topbar-title').textContent = modules[module].title;
+    // Afficher la vue cible
+    const view = document.getElementById(`view-${module}`);
+    const navItem = document.querySelector(`[data-module="${module}"]`);
+    if (view) view.classList.remove('hidden');
+    if (navItem) navItem.classList.add('active');
+
+    const titleEl = document.getElementById('topbar-title');
+    if (titleEl) titleEl.textContent = modules[module].title;
 
     currentModule = module;
 
-    // Init once
+    // Init une seule fois — avec protection contre les erreurs
     if (!initialized.has(module)) {
-      modules[module].init();
       initialized.add(module);
+      try {
+        modules[module].init();
+      } catch (err) {
+        console.error('[Nav] Erreur init module', module, err);
+        if (view) view.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-solid fa-triangle-exclamation" style="color:var(--red)"></i>
+            <h3>Erreur de chargement</h3>
+            <p>${err.message}</p>
+            <button class="btn btn-secondary" onclick="App.retryModule('${module}')">Réessayer</button>
+          </div>`;
+      }
     }
 
-    // Close sidebar on mobile
+    // Fermer sidebar sur mobile
     if (window.innerWidth <= 900) {
       document.getElementById('sidebar').classList.remove('open');
     }
+  }
+
+  function retryModule(module) {
+    initialized.delete(module);
+    navigate(module);
   }
 
   function showModal({ title, subtitle = '', body, footer = '', size = 'md' }) {
