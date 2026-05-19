@@ -237,6 +237,9 @@ const App = (() => {
 
     // Backend configuré — prêt à l'emploi
 
+    // Init Facebook connection badge
+    if (typeof Facebook !== 'undefined') Facebook.init();
+
     // Init dashboard
     navigate('dashboard');
 
