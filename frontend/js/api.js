@@ -96,13 +96,16 @@ const DEMO_DATA = {
   pipeline: { projects: [{ id: 'DEMO1', type: 'Construction de garage', ville: 'Saint-Jean-sur-Richelieu', client: 'Famille Tremblay', dateFin: new Date().toISOString(), valeur: '28,500$' }] }
 };
 
-const DEMO_MODE = !localStorage.getItem('heureka_api_url');
+// URL Apps Script — Les Gestions Heúrēka
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMxpauCMCtFFsCxM-I2a4o7e7DPUgDuW_b-rQcQXEcBhzGXoV_pW_y8UDXelSvWaGo/exec';
+
+const DEMO_MODE = false;
 
 // Simuler un délai réseau en mode démo
 const demoDelay = (data) => new Promise(resolve => setTimeout(() => resolve(data), 400));
 
 const API = (() => {
-  const BASE_URL = localStorage.getItem('heureka_api_url') || '';
+  const BASE_URL = APPS_SCRIPT_URL;
 
   async function request(action, data = {}) {
     if (!BASE_URL) throw new Error('DEMO');

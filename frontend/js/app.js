@@ -215,15 +215,7 @@ const App = (() => {
       document.getElementById('sidebar').classList.toggle('open');
     });
 
-    // Mode démo — afficher bannière si pas de backend
-    if (API.isDemoMode()) {
-      showDemoBanner();
-      // Badge generator pour le projet Pipeline démo
-      setTimeout(() => {
-        document.getElementById('badge-generator').style.display = 'inline-flex';
-        document.getElementById('badge-generator').textContent = '1';
-      }, 1500);
-    }
+    // Backend configuré — prêt à l'emploi
 
     // Init dashboard
     navigate('dashboard');
