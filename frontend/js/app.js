@@ -246,7 +246,8 @@ const App = (() => {
 
   // Public API
   return {
-    navigate, showModal, closeModal, showLoading, hideLoading,
+    init, navigate, retryModule,
+    showModal, closeModal, showLoading, hideLoading,
     toast, copyToClipboard, showAlerts, syncPipeline,
     promptApiSetup, saveApiUrl, formatDate, daysUntil, getCurrentSeason
   };
