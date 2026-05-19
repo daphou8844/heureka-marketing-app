@@ -4,15 +4,15 @@
 
 const App = (() => {
   const modules = {
-    dashboard: { title: 'Tableau de bord', init: Dashboard.init },
-    generator: { title: 'Générateur de projet terminé', init: Generator.init },
-    calendar: { title: 'Calendrier de publication', init: Calendar.init },
-    trending: { title: 'TikTok Tendances 🔥', init: Trending.init },
-    'content-bank': { title: 'Banque de contenu', init: ContentBank.init },
-    reviews: { title: 'Avis Google', init: Reviews.init },
-    seasonal: { title: 'Contenu saisonnier', init: Seasonal.init },
-    reports: { title: 'Rapport mensuel', init: Reports.init },
-    promotions: { title: 'Promotions saisonnières', init: Promotions.init }
+    dashboard: { title: 'Tableau de bord', init: () => Dashboard.init() },
+    generator: { title: 'Générateur de projet terminé', init: () => Generator.init() },
+    calendar: { title: 'Calendrier de publication', init: () => Calendar.init() },
+    trending: { title: 'TikTok Tendances 🔥', init: () => Trending.init() },
+    'content-bank': { title: 'Banque de contenu', init: () => ContentBank.init() },
+    reviews: { title: 'Avis Google', init: () => Reviews.init() },
+    seasonal: { title: 'Contenu saisonnier', init: () => Seasonal.init() },
+    reports: { title: 'Rapport mensuel', init: () => Reports.init() },
+    promotions: { title: 'Promotions saisonnières', init: () => Promotions.init() }
   };
 
   let currentModule = 'dashboard';
