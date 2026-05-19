@@ -64,21 +64,21 @@ function setupAll() {
   Logger.log('');
   Logger.log('📌 PROCHAINES ÉTAPES:');
   Logger.log('1. Aller dans Paramètres du projet → Propriétés du script');
-  Logger.log('2. Ajouter : CLAUDE_API_KEY = votre clé Claude (sk-ant-...)');
-  Logger.log('3. Ajouter : PIPELINE_SHEET_ID = ID du sheet "Gestions Heuréka Base de données"');
-  Logger.log('4. Ajouter : GOOGLE_BUSINESS_LINK = votre lien de review Google');
-  Logger.log('5. Déployer → Nouveau déploiement → Application Web');
-  Logger.log('6. Copier l\'URL et la coller dans l\'app frontend');
+  Logger.log('2. Ajouter : PIPELINE_SHEET_ID = ID du sheet "Gestions Heuréka Base de données"');
+  Logger.log('3. Ajouter : GOOGLE_BUSINESS_LINK = votre lien de review Google (optionnel)');
+  Logger.log('4. Déployer → Nouveau déploiement → Application Web');
+  Logger.log('5. Copier l\'URL et la coller dans l\'app frontend');
+  Logger.log('');
+  Logger.log('✨ Aucune clé API requise — génération par templates incluse!');
 
-  // Afficher une alerte dans l'interface
   SpreadsheetApp.getUi().alert(
     '✅ Installation réussie!\n\n' +
     'ID du Sheet sauvegardé automatiquement.\n\n' +
     'Prochaine étape :\n' +
     'Extensions → Apps Script → Paramètres du projet\n' +
-    '→ Ajouter votre clé Claude API\n' +
-    '→ Ajouter l\'ID du Sheet Pipeline\n\n' +
-    'Voir le log d\'exécution pour les instructions complètes.'
+    '→ Ajouter PIPELINE_SHEET_ID (ID de votre Sheet Pipeline)\n' +
+    '→ Ajouter GOOGLE_BUSINESS_LINK (optionnel)\n\n' +
+    'Aucune clé Claude API nécessaire — zéro coût!'
   );
 }
 
@@ -146,18 +146,17 @@ function showDeploymentUrl() {
   }
 }
 
-// Utilitaire : tester la connexion Claude API
-function testClaudeApi() {
-  try {
-    const response = callClaude(
-      'Tu es un assistant marketing pour Les Gestions Heúrēka.',
-      'Dis "Connexion Claude OK!" en une phrase.',
-      50
-    );
-    SpreadsheetApp.getUi().alert('✅ Claude API fonctionne!\n\nRéponse: ' + response);
-  } catch (err) {
-    SpreadsheetApp.getUi().alert('❌ Erreur Claude API:\n\n' + err.message + '\n\nVérifiez votre clé dans Propriétés du script.');
-  }
+// Utilitaire : tester la génération de contenu (sans IA)
+function testContentGeneration() {
+  const sample = generateProjectContent({
+    type: 'Portes et fenêtres',
+    ville: 'Saint-Jean-sur-Richelieu',
+    duree: '3 jours',
+    client: 'Famille Tremblay',
+    description: 'Remplacement de 8 fenêtres double vitrage dans une maison de plain-pied.'
+  });
+  Logger.log('--- POST FACEBOOK ---\n' + sample.facebook);
+  SpreadsheetApp.getUi().alert('✅ Génération OK!\n\nVoir le log Apps Script pour un exemple de contenu généré.');
 }
 
 // Utilitaire : tester la connexion Pipeline

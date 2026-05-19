@@ -4,10 +4,10 @@
 // ============================================
 
 const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-const CLAUDE_API_KEY = PropertiesService.getScriptProperties().getProperty('CLAUDE_API_KEY');
 const GMAIL_SENDER = 'daphou8844@gmail.com';
 const GOOGLE_BUSINESS_LINK = PropertiesService.getScriptProperties().getProperty('GOOGLE_BUSINESS_LINK') || '';
 const PIPELINE_SHEET_ID = PropertiesService.getScriptProperties().getProperty('PIPELINE_SHEET_ID');
+// Pas de Claude API — génération par templates (zéro coût)
 
 // Onglets du Sheet
 const SHEETS = {

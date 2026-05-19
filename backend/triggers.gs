@@ -56,11 +56,9 @@ function weeklyTikTokScrape() {
 }
 
 function triggerTrendsScrape() {
-  // Scraping des sources publiques
+  // Scraping des sources publiques + génération par templates
   const rawTrends = scrapeAllSources();
-
-  // Générer le contenu avec Claude
-  const analysed = generateTikTokTrendsContent(rawTrends);
+  const analysed = buildTrendsByTemplates(rawTrends);
 
   // Sauvegarder dans le Sheet
   const id = generateId();
@@ -112,6 +110,30 @@ Hashtags actifs: #renovation #maison #construction #quebec #reno #travaux #befor
   } catch (_) {}
 
   return results.join('\n\n');
+}
+
+function buildTrendsByTemplates(rawText) {
+  // Tendances TikTok statiques adaptées à la rénovation — mise à jour hebdomadaire automatique
+  const week = Math.ceil(new Date().getDate() / 7);
+  const soundSets = [
+    [
+      { name: 'Before/After Reveal Sound', desc: 'Son dramatique pour transformation', useCase: 'Révélation avant/après sur chantier terminé' },
+      { name: 'Construction Ambiant', desc: 'Sons authentiques de chantier', useCase: 'Day in the life ou time-lapse' },
+      { name: 'Motivational Beat', desc: 'Énergie positive et dynamisme', useCase: 'Présentation de l\'équipe' },
+      { name: 'Satisfying Sounds', desc: 'Sons satisfaisants de précision', useCase: 'Pose de fenêtres, joints, finitions' },
+      { name: 'Acoustic Chill', desc: 'Guitare douce et chaleureuse', useCase: 'Témoignage client ou conseil pratique' }
+    ]
+  ];
+  const sounds = soundSets[0];
+  const formats = [
+    { format: 'Before/After Reveal', desc: 'Montrez la transformation en 20 secondes. Commencez par l\'avant, coupez au résultat.', duration: '15-30 sec', engagement: 'Top engagement' },
+    { format: 'Day in the Life', desc: 'Suivez votre équipe de 7h à 17h sur un chantier. Authentique et humanisant.', duration: '45-60 sec', engagement: 'Top abonnés' },
+    { format: 'Tips en 3 points', desc: '3 conseils rapides pour les propriétaires. Très partageable et sauvegardable.', duration: '25-35 sec', engagement: 'Top partages' }
+  ];
+  const scripts = generateSeasonalContentClaude(null, 'TikTok rénovation semaine ' + week);
+  const rawScripts = scripts.map(s => `[TITRE] ${s.theme}\n${s.content}`).join('\n\n---\n\n');
+  const hashtags = ['#GestionsHeureka', '#RenovationQuebec', '#SaintJeanSurRichelieu', '#RevetementExterieur', '#PortesEtFenetres', '#Agrandissement', '#ConstructionGarage', '#EntrepreneurGeneral', '#Maison', '#Renovation', '#Quebec', '#Monteregie', '#AvantApres', '#BeforeAfter', '#Reno', '#Construction', '#MaisonQuebec', '#RenoTikTok', '#Travaux', '#ExpertReno'].join('\n');
+  return { sounds, formats, rawScripts, rawHashtags: hashtags };
 }
 
 function sendTikTokSummaryEmail(analysed) {
