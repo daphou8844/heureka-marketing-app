@@ -256,4 +256,5 @@ const App = (() => {
 // Expose globally for inline onclick handlers
 window.App = App;
 
-document.addEventListener('DOMContentLoaded', App.init.bind(App));
+// Les scripts sont en bas du <body> — DOM déjà prêt, on appelle init directement
+App.init();
