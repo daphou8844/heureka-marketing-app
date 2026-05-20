@@ -214,8 +214,8 @@ const API = (() => {
       demoDelay({ success: true })
     ),
 
-    sendToMake: (message, date, imageUrl) => safe('sendToMake',
-      () => post('sendToMake', { message, date, imageUrl }),
+    sendToMake: (contentId, date) => safe('sendToMake',
+      () => post('sendToMake', { contentId, date }),
       demoDelay({ success: true })
     ),
 
@@ -224,7 +224,7 @@ const API = (() => {
     ),
     getPipelineProjects: () => safe('getPipelineProjects', () => request('getPipelineProjects'), DEMO_DATA.pipeline),
 
-    uploadPhoto: async (file, projectId) => {
+    uploadPhoto: async (file, projectId, photoType, type, ville) => {
       if (!BASE_URL) {
         await new Promise(r => setTimeout(r, 800));
         return { url: URL.createObjectURL(file), fileId: 'DEMO', fileName: file.name };
@@ -234,7 +234,10 @@ const API = (() => {
         reader.onload = async (e) => {
           try {
             const base64 = e.target.result.split(',')[1];
-            const result = await post('uploadPhoto', { fileName: file.name, mimeType: file.type, base64Data: base64, projectId });
+            const result = await post('uploadPhoto', {
+              fileName: file.name, mimeType: file.type, base64Data: base64,
+              projectId, photoType: photoType || 'apres', type, ville
+            });
             resolve(result);
           } catch (err) { reject(err); }
         };

@@ -317,17 +317,62 @@ Connectez-vous pour accéder au contenu saisonnier de l'${match.season}.
 
 // ============ UPLOAD PHOTO ============
 function uploadPhoto(payload) {
-  const { fileName, mimeType, base64Data, projectId } = payload;
-  const folder = getOrCreateDriveFolder('Heúrēka Marketing — Photos');
+  const { fileName, mimeType, base64Data, projectId, photoType, type, ville } = payload;
+
+  const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+  const month = MONTHS_FR[new Date().getMonth()];
+  const safeType  = (type  || 'Projet').replace(/[^a-zA-ZÀ-ÿ0-9]/g, '-').replace(/-+/g,'-').slice(0, 18);
+  const safeVille = (ville || 'Quebec').replace(/[^a-zA-ZÀ-ÿ0-9]/g, '-').replace(/-+/g,'-').slice(0, 18);
+  const subfolderName = safeType + '-' + safeVille + '-' + month;
+
+  // Dossier principal + sous-dossier par projet
+  const mainFolder = getOrCreateDriveFolder('Heureka-Marketing-Photos');
+  mainFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const subfolder = getOrCreateSubfolder(mainFolder, subfolderName);
+  subfolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
   const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), mimeType, fileName);
-  const file = folder.createFile(blob);
+  const file = subfolder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  const url = `https://drive.google.com/uc?id=${file.getId()}`;
-  return { url, fileId: file.getId(), fileName };
+
+  const fileId = file.getId();
+  const url = 'https://drive.google.com/uc?id=' + fileId;
+
+  // Sauvegarder l'ID dans le projet (colonne Photos en JSON)
+  if (projectId && projectId !== 'new') {
+    _savePhotoToProject(projectId, photoType || 'apres', fileId, url);
+  }
+
+  return { url, fileId, fileName, subfolder: subfolderName };
 }
 
 function getOrCreateDriveFolder(name) {
   const folders = DriveApp.getFoldersByName(name);
   if (folders.hasNext()) return folders.next();
   return DriveApp.createFolder(name);
+}
+
+function getOrCreateSubfolder(parent, name) {
+  const subs = parent.getFoldersByName(name);
+  if (subs.hasNext()) return subs.next();
+  return parent.createFolder(name);
+}
+
+function _savePhotoToProject(projectId, photoType, fileId, url) {
+  try {
+    const rows = getSheetData(SHEETS.PROJETS);
+    const proj = rows.find(r => r['ID'] === projectId);
+    let photos = {};
+    if (proj && proj['Photos']) {
+      try { photos = JSON.parse(proj['Photos']); } catch (_) {}
+    }
+    if (photoType === 'apres' || photoType === 'après') {
+      photos.apres_id  = fileId;
+      photos.apres_url = url;
+    } else {
+      photos.avant_id  = fileId;
+      photos.avant_url = url;
+    }
+    updateRowById(SHEETS.PROJETS, projectId, { Photos: JSON.stringify(photos) });
+  } catch (_) {}
 }

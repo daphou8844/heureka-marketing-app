@@ -331,8 +331,9 @@ const Generator = (() => {
     try {
       // Upload photos first
       const photoUrls = [];
-      for (const file of uploadedFiles) {
-        const result = await API.uploadPhoto(file, 'new');
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const photoType = i === uploadedFiles.length - 1 ? 'apres' : 'avant';
+        const result = await API.uploadPhoto(uploadedFiles[i], 'new', photoType, type, ville);
         photoUrls.push(result.url);
       }
       projectData.photoUrls = photoUrls;

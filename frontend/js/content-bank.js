@@ -208,13 +208,11 @@ const ContentBank = (() => {
     if (!date) { App.toast('Choisissez une date', 'error'); return; }
 
     const scheduledDate = `${date}T${time}:00`;
-    const message = c.fullContent || c.preview || '';
-    const imageUrl = c.photoUrl || c.imageUrl || '';
 
     App.closeModal();
     App.showLoading('Envoi à Make.com...');
     try {
-      await API.sendToMake(message, scheduledDate, imageUrl);
+      await API.sendToMake(c.id, scheduledDate);
       App.hideLoading();
       await API.updateContentStatus(c.id, 'Planifié');
       c.status = 'Planifié';
