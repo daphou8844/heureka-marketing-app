@@ -35,6 +35,8 @@ body{display:flex;height:100vh}
 .topbar-title{flex:1;font-size:16px;font-weight:600;color:var(--text-primary)}
 .topbar-right{display:flex;align-items:center;gap:12px}
 .sync-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)}
+.auto-save-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#4ade80;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.18);border-radius:20px;padding:3px 10px;flex-shrink:0}
+.auto-save-dot{width:6px;height:6px;background:#4ade80;border-radius:50%;flex-shrink:0}
 .user-avatar{width:34px;height:34px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--black);cursor:pointer}
 .alert-bar{background:rgba(249,115,22,.1);border-bottom:1px solid rgba(249,115,22,.3);padding:10px 24px;flex-shrink:0}
 .alert-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--orange)}
@@ -231,7 +233,7 @@ tr:hover td{background:rgba(255,255,255,.02)}tr:last-child td{border-bottom:none
       <button class="btn-icon" id="sidebar-toggle"><i class="fa-solid fa-bars"></i></button>
       <div class="topbar-title" id="topbar-title">Tableau de bord</div>
       <div class="topbar-right">
-        <div class="sync-status"><i class="fa-solid fa-circle-check"></i><span>Synchronisé</span></div>
+        <span class="auto-save-pill"><span class="auto-save-dot"></span>Auto-enregistré</span>
         <div class="user-avatar">M</div>
       </div>
     </header>
