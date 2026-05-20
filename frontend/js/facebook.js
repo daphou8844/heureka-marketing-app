@@ -12,14 +12,22 @@ const Facebook = (() => {
 
   function loadSDK() {
     return new Promise(resolve => {
-      if (window.FB) { FB.init({ appId: fbAppId, cookie: true, xfbml: false, version: 'v19.0' }); resolve(); return; }
+      if (window.FB) { resolve(); return; }
+      // fbAsyncInit DOIT être défini avant l'insertion du script
       window.fbAsyncInit = function() {
-        FB.init({ appId: fbAppId, cookie: true, xfbml: false, version: 'v19.0' });
+        FB.init({
+          appId: fbAppId,
+          cookie: true,
+          xfbml: false,
+          version: 'v19.0',
+          status: false   // ne pas vérifier le statut auto — évite erreur domaine
+        });
         resolve();
       };
       const s = document.createElement('script');
       s.src = 'https://connect.facebook.net/fr_CA/sdk.js';
       s.async = true;
+      s.defer = true;
       document.head.appendChild(s);
     });
   }
