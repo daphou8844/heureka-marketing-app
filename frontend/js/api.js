@@ -214,6 +214,11 @@ const API = (() => {
       demoDelay({ success: true })
     ),
 
+    sendToMake: (message, date, imageUrl) => safe('sendToMake',
+      () => post('sendToMake', { message, date, imageUrl }),
+      demoDelay({ success: true })
+    ),
+
     syncPipeline: () => safe('syncPipeline', () => post('syncPipeline'),
       demoDelay({ newProjects: 1, projects: DEMO_DATA.pipeline.projects })
     ),

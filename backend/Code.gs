@@ -69,6 +69,7 @@ function doPost(e) {
       case 'triggerTrendsScrape': result = triggerTrendsScrape(); break;
       case 'uploadPhoto': result = uploadPhoto(payload); break;
       case 'scheduleMetricool': result = scheduleMetricoolPost(payload.contentId, payload.text, payload.scheduledDate, payload.imageUrl); break;
+      case 'sendToMake': result = sendToMakeWebhook(payload.message, payload.date, payload.imageUrl); break;
       default: result = { error: 'Action inconnue: ' + action };
     }
     return jsonResponse(result);
