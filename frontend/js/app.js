@@ -230,9 +230,18 @@ const App = (() => {
       if (e.target === document.getElementById('modal-overlay')) closeModal();
     });
 
-    // Sidebar toggle
+    // Sidebar toggle — rétractable/extensible avec persistance
+    const _sbEl = document.getElementById('sidebar');
+    const _mcEl = document.getElementById('main-content');
+    function _applySbState(collapsed){
+      if(collapsed){ _sbEl.classList.add('collapsed'); _mcEl.style.marginLeft='0'; }
+      else { _sbEl.classList.remove('collapsed'); _mcEl.style.marginLeft='var(--sidebar-width)'; }
+    }
+    _applySbState(!!localStorage.getItem('mkt_sb_col'));
     document.getElementById('sidebar-toggle').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('open');
+      const col = _sbEl.classList.toggle('collapsed');
+      _mcEl.style.marginLeft = col ? '0' : 'var(--sidebar-width)';
+      localStorage.setItem('mkt_sb_col', col ? '1' : '');
     });
 
     // Init dashboard
