@@ -325,9 +325,8 @@ function uploadPhoto(payload) {
   const safeVille = (ville || 'Quebec').replace(/[^a-zA-ZÀ-ÿ0-9]/g, '-').replace(/-+/g,'-').slice(0, 18);
   const subfolderName = safeType + '-' + safeVille + '-' + month;
 
-  // Dossier principal + sous-dossier par projet
-  const mainFolder = getOrCreateDriveFolder('Heureka-Marketing-Photos');
-  mainFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  // Dossier principal Drive partagé + sous-dossier par projet
+  const mainFolder = DriveApp.getFolderById('1YFl5OIfczfuVaGkXaefKxE24AS1z2wke');
   const subfolder = getOrCreateSubfolder(mainFolder, subfolderName);
   subfolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
