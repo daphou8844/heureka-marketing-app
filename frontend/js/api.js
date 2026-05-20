@@ -209,6 +209,11 @@ const API = (() => {
         email: `Bonjour,\n\nNous avons une offre exclusive pour vous : ${data.name}.\n\n${data.offer}${data.value ? ' — jusqu\'à '+data.value : ''}.\n\n${data.message || ''}\n\nContactez-nous : gestionsheureka.net\n\nL'équipe Heúrēka` }})
     ),
 
+    scheduleMetricool: (contentId, text, scheduledDate, imageUrl) => safe('scheduleMetricool',
+      () => post('scheduleMetricool', { contentId, text, scheduledDate, imageUrl }),
+      demoDelay({ success: true })
+    ),
+
     syncPipeline: () => safe('syncPipeline', () => post('syncPipeline'),
       demoDelay({ newProjects: 1, projects: DEMO_DATA.pipeline.projects })
     ),

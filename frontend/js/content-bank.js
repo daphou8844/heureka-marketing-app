@@ -82,16 +82,24 @@ const ContentBank = (() => {
                   </select>
                 </td>
                 <td>
-                  <div style="display:flex;gap:6px">
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
                     <button class="btn btn-icon" title="Voir" onclick="ContentBank.viewContent('${c.id}')">
                       <i class="fa-solid fa-eye"></i>
                     </button>
                     <button class="btn btn-icon btn-copy" title="Copier" onclick="ContentBank.copyContent('${c.id}', this)">
                       <i class="fa-solid fa-copy"></i>
                     </button>
-                    <button class="btn btn-icon" title="Planifier" onclick="Calendar.openScheduler()">
+                    <button class="btn btn-icon" title="Planifier calendrier" onclick="Calendar.openScheduler()">
                       <i class="fa-solid fa-calendar-plus"></i>
                     </button>
+                    ${c.platform === 'Facebook' && c.status !== 'Planifié dans Metricool' ? `
+                      <button class="btn btn-icon" title="Planifier dans Metricool"
+                        onclick="ContentBank.openMetricoolScheduler('${c.id}')"
+                        style="color:#4267B2;border-color:rgba(66,103,178,0.4)"
+                        title="Envoyer à Metricool → Facebook">
+                        <i class="fa-brands fa-facebook"></i>
+                      </button>
+                    ` : ''}
                     <button class="btn btn-icon" title="Supprimer" onclick="ContentBank.deleteContent('${c.id}')">
                       <i class="fa-solid fa-trash" style="color:var(--red)"></i>
                     </button>
@@ -128,6 +136,92 @@ const ContentBank = (() => {
     const c = allContent.find(x => x.id === id);
     if (!c) return;
     App.copyToClipboard(c.fullContent || c.preview || '', btn);
+  }
+
+  function openMetricoolScheduler(id) {
+    const c = allContent.find(x => x.id === id);
+    if (!c) return;
+    const text = c.fullContent || c.preview || '';
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateMin = new Date().toISOString().split('T')[0];
+    const dateDefault = tomorrow.toISOString().split('T')[0];
+
+    App.showModal({
+      title: 'Planifier dans Metricool',
+      subtitle: 'Le post sera envoyé à Metricool → publié automatiquement sur Facebook',
+      body: `
+        <div style="padding:10px 14px;background:rgba(66,103,178,0.08);border:1px solid rgba(66,103,178,0.25);
+          border-radius:8px;margin-bottom:16px;font-size:13px">
+          <i class="fa-brands fa-facebook" style="color:#4267B2"></i>
+          <strong style="color:#4267B2"> Facebook — Les Gestions Heúrēka</strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Aperçu du contenu</label>
+          <div style="background:var(--black-soft);border:1px solid var(--black-border);border-radius:8px;
+            padding:12px;font-size:13px;line-height:1.6;max-height:150px;overflow-y:auto;color:var(--text-secondary)">
+            ${text.substring(0, 300)}${text.length > 300 ? '…' : ''}
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date de publication</label>
+            <input type="date" class="form-control" id="mc-date" min="${dateMin}" value="${dateDefault}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Heure</label>
+            <select class="form-control" id="mc-time">
+              <option value="08:00">08h00</option>
+              <option value="09:00">09h00</option>
+              <option value="12:00">12h00</option>
+              <option value="17:00" selected>17h00</option>
+              <option value="18:00">18h00</option>
+              <option value="19:00">19h00</option>
+              <option value="20:00">20h00</option>
+            </select>
+          </div>
+        </div>
+        ${c.photoUrl || c.imageUrl ? `
+          <div class="form-group">
+            <label class="form-label">Image jointe</label>
+            <img src="${c.photoUrl || c.imageUrl}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px">
+          </div>
+        ` : ''}
+        <div style="font-size:12px;color:var(--text-muted)">
+          <i class="fa-solid fa-envelope"></i> Un email de confirmation vous sera envoyé après la planification.
+        </div>
+      `,
+      footer: `
+        <button class="btn btn-ghost" onclick="App.closeModal()">Annuler</button>
+        <button class="btn btn-primary" onclick="ContentBank.confirmMetricool('${id}')">
+          <i class="fa-brands fa-facebook"></i> Envoyer à Metricool
+        </button>
+      `
+    });
+  }
+
+  async function confirmMetricool(id) {
+    const c = allContent.find(x => x.id === id);
+    if (!c) return;
+    const date = document.getElementById('mc-date').value;
+    const time = document.getElementById('mc-time').value;
+    if (!date) { App.toast('Choisissez une date', 'error'); return; }
+
+    const scheduledDate = `${date}T${time}:00`;
+    const text = c.fullContent || c.preview || '';
+    const imageUrl = c.photoUrl || c.imageUrl || null;
+
+    App.closeModal();
+    App.showLoading('Envoi à Metricool...');
+    try {
+      await API.scheduleMetricool(c.id, text, scheduledDate, imageUrl);
+      App.hideLoading();
+      c.status = 'Planifié dans Metricool';
+      applyFilters();
+      App.toast('✅ Post envoyé à Metricool! Email de confirmation envoyé.', 'success');
+    } catch (err) {
+      App.hideLoading();
+      App.toast(`Erreur Metricool: ${err.message}`, 'error');
+    }
   }
 
   async function updateStatus(id, status) {
@@ -225,5 +319,5 @@ const ContentBank = (() => {
     }
   }
 
-  return { init, search, filterBy, viewContent, copyContent, updateStatus, deleteContent };
+  return { init, search, filterBy, viewContent, copyContent, updateStatus, deleteContent, openMetricoolScheduler, confirmMetricool };
 })();

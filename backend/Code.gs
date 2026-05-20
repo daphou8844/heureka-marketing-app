@@ -68,6 +68,7 @@ function doPost(e) {
       case 'syncPipeline': result = syncPipeline(); break;
       case 'triggerTrendsScrape': result = triggerTrendsScrape(); break;
       case 'uploadPhoto': result = uploadPhoto(payload); break;
+      case 'scheduleMetricool': result = scheduleMetricoolPost(payload.contentId, payload.text, payload.scheduledDate, payload.imageUrl); break;
       default: result = { error: 'Action inconnue: ' + action };
     }
     return jsonResponse(result);
