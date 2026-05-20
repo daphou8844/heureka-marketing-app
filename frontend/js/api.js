@@ -96,8 +96,8 @@ const DEMO_DATA = {
   pipeline: { projects: [{ id: 'DEMO1', type: 'Construction de garage', ville: 'Saint-Jean-sur-Richelieu', client: 'Famille Tremblay', dateFin: new Date().toISOString(), valeur: '28,500$' }] }
 };
 
-// URL Apps Script — Les Gestions Heúrēka
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzMxpauCMCtFFsCxM-I2a4o7e7DPUgDuW_b-rQcQXEcBhzGXoV_pW_y8UDXelSvWaGo/exec';
+// URL Apps Script — depuis config.js (HEUREKA_CONFIG)
+const APPS_SCRIPT_URL = HEUREKA_CONFIG.APPS_SCRIPT_URL;
 
 const DEMO_MODE = false;
 
@@ -219,10 +219,27 @@ const API = (() => {
       demoDelay({ success: true })
     ),
 
-    syncPipeline: () => safe('syncPipeline', () => post('syncPipeline'),
+    syncPipeline: () => safe('syncPipeline',
+      async () => {
+        const res = await fetch(HEUREKA_CONFIG.APPS_SCRIPT_URL+'?action=getData&sheet=Marketing_Contenu', {redirect:'follow'});
+        const data = await res.json();
+        const pending = Array.isArray(data) ? data.filter(r=>r.Statut_Contenu==='En attente de contenu') : [];
+        return {
+          newProjects: pending.length,
+          projects: pending.map(r=>({id:r.ID_Contenu, type:r.Type_Travaux, ville:r.Ville, client:r.Client, dateFin:r.Date_Fin_Chantier, projetId:r.Projet_ID}))
+        };
+      },
       demoDelay({ newProjects: 1, projects: DEMO_DATA.pipeline.projects })
     ),
-    getPipelineProjects: () => safe('getPipelineProjects', () => request('getPipelineProjects'), DEMO_DATA.pipeline),
+    getPipelineProjects: () => safe('getPipelineProjects',
+      async () => {
+        const res = await fetch(HEUREKA_CONFIG.APPS_SCRIPT_URL+'?action=getData&sheet=Marketing_Contenu', {redirect:'follow'});
+        const data = await res.json();
+        const pending = Array.isArray(data) ? data.filter(r=>r.Statut_Contenu==='En attente de contenu') : [];
+        return { projects: pending.map(r=>({id:r.ID_Contenu, type:r.Type_Travaux, ville:r.Ville, client:r.Client, dateFin:r.Date_Fin_Chantier, projetId:r.Projet_ID})) };
+      },
+      DEMO_DATA.pipeline
+    ),
 
     uploadPhoto: async (file, projectId, photoType, type, ville) => {
       if (!BASE_URL) {
