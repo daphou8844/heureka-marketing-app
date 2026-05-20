@@ -419,7 +419,7 @@ function getMonthlyReport(year, month) {
     if (!c['DatePublication']) return false;
     const d = new Date(c['DatePublication']);
     return d.getFullYear() === year && d.getMonth() + 1 === month;
-  }).map(c => ({ platform: c['Plateforme'], type: c['Type'], date: c['DatePublication'], status: c['Statut'] }));
+  }).map(c => ({ id: c['ID'], platform: c['Plateforme'], type: c['Type'], date: c['DatePublication'], status: c['Statut'] }));
 
   return {
     stats: row ? {

@@ -103,7 +103,7 @@ const Reports = (() => {
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr><th>Date</th><th>Plateforme</th><th>Type</th><th>Statut</th></tr>
+                <tr><th>Date</th><th>Plateforme</th><th>Type</th><th>Statut</th><th></th></tr>
               </thead>
               <tbody>
                 ${data.publications.map(p => `
@@ -112,6 +112,12 @@ const Reports = (() => {
                     <td><span class="tag ${p.platform === 'Facebook' ? 'tag-blue' : 'tag-gold'}">${p.platform}</span></td>
                     <td>${p.type || '—'}</td>
                     <td><span class="tag tag-green">${p.status || 'Publié'}</span></td>
+                    <td>
+                      ${p.id ? `<button class="btn btn-icon" title="Supprimer" style="color:var(--red)"
+                        onclick="if(confirm('Supprimer cette publication définitivement?')){Reports.deletePublication('${p.id}')}">
+                        <i class="fa-solid fa-trash"></i>
+                      </button>` : ''}
+                    </td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -203,6 +209,14 @@ const Reports = (() => {
     }
   }
 
+  async function deletePublication(id) {
+    try {
+      await API.deleteContent(id);
+      App.toast('Contenu supprimé avec succès', 'success');
+      await loadAndRender();
+    } catch (err) { App.toast(err.message, 'error'); }
+  }
+
   function exportPDF() {
     App.toast('Ouverture de la fenêtre d\'impression...', 'info');
     window.print();
@@ -230,5 +244,5 @@ const Reports = (() => {
     await loadAndRender();
   }
 
-  return { init, openStatsEntry, saveStats, exportPDF, changeMonth, changeYear };
+  return { init, openStatsEntry, saveStats, exportPDF, changeMonth, changeYear, deletePublication };
 })();

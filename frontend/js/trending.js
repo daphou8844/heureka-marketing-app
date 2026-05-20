@@ -4,12 +4,14 @@
 
 const Trending = (() => {
   const view = () => document.getElementById('view-trending');
+  let trendScripts = [];
 
   function renderTrends(data) {
     const lastUpdate = data.lastUpdate || null;
     const sounds = data.sounds || [];
     const formats = data.formats || [];
-    const scripts = data.scripts || [];
+    trendScripts = data.scripts || [];
+    const scripts = trendScripts;
     const hashtags = data.hashtags || [];
 
     view().innerHTML = `
@@ -97,6 +99,10 @@ const Trending = (() => {
                   onclick="Generator.scheduleContent('tiktok', '${s.id || ''}')">
                   <i class="fa-solid fa-calendar-plus"></i> Planifier
                 </button>
+                <button class="btn btn-icon btn-sm"
+                  onclick="if(confirm('Supprimer ce script?')){Trending.deleteScript('${s.id}')}" title="Supprimer" style="color:var(--red)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
               </div>
             </div>
             <div class="content-block-body">
@@ -136,6 +142,12 @@ const Trending = (() => {
     `;
   }
 
+  function deleteScript(id) {
+    trendScripts = trendScripts.filter(s => s.id !== id);
+    renderTrends({ scripts: trendScripts, sounds: [], formats: [], hashtags: [] });
+    App.toast('Script supprimé de la liste', 'success');
+  }
+
   async function triggerManualUpdate() {
     App.showLoading('Analyse des tendances TikTok en cours...');
     try {
@@ -159,5 +171,5 @@ const Trending = (() => {
     }
   }
 
-  return { init, triggerManualUpdate };
+  return { init, triggerManualUpdate, deleteScript };
 })();

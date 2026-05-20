@@ -4,6 +4,7 @@
 
 const Seasonal = (() => {
   const view = () => document.getElementById('view-seasonal');
+  let currentContent = [];
 
   const SEASONS = {
     Printemps: {
@@ -44,7 +45,8 @@ const Seasonal = (() => {
   function render(data = {}) {
     const currentSeason = getCurrentSeason();
     const season = SEASONS[currentSeason];
-    const content = data.content || [];
+    currentContent = data.content || [];
+    const content = currentContent;
 
     view().innerHTML = `
       <div class="page-header">
@@ -120,10 +122,16 @@ const Seasonal = (() => {
             <div class="content-block">
               <div class="content-block-header">
                 <div class="content-block-title">${c.platform || 'Contenu'} — ${c.theme || ''}</div>
-                <button class="btn btn-ghost btn-sm btn-copy"
-                  onclick="App.copyToClipboard(\`${(c.content || '').replace(/`/g, '\\`')}\`, this)">
-                  <i class="fa-solid fa-copy"></i> Copier
-                </button>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-ghost btn-sm btn-copy"
+                    onclick="App.copyToClipboard(\`${(c.content || '').replace(/`/g, '\\`')}\`, this)">
+                    <i class="fa-solid fa-copy"></i> Copier
+                  </button>
+                  <button class="btn btn-icon btn-sm" style="color:var(--red)"
+                    onclick="if(confirm('Supprimer ce contenu?')){Seasonal.deleteContent('${c.id}')}" title="Supprimer">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
               </div>
               <div class="content-block-body">
                 <div class="content-text">${c.content || ''}</div>
@@ -133,6 +141,12 @@ const Seasonal = (() => {
         </div>
       ` : ''}
     `;
+  }
+
+  function deleteContent(id) {
+    currentContent = currentContent.filter(c => c.id !== id);
+    render({ content: currentContent });
+    App.toast('Contenu supprimé avec succès', 'success');
   }
 
   async function generateSeason(season) {
@@ -182,5 +196,5 @@ const Seasonal = (() => {
     } catch (_) { render({}); }
   }
 
-  return { init, generateSeason, generateTheme, generateIdea };
+  return { init, generateSeason, generateTheme, generateIdea, deleteContent };
 })();

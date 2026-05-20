@@ -304,6 +304,10 @@ const Calendar = (() => {
         </div>
       `,
       footer: `
+        <button class="btn btn-icon" style="margin-right:auto;color:var(--red)"
+          onclick="if(confirm('Supprimer cette publication?')){App.closeModal();Calendar.deleteEvent('${ev.id}')}" title="Supprimer">
+          <i class="fa-solid fa-trash"></i>
+        </button>
         <button class="btn btn-ghost" onclick="App.closeModal()">Fermer</button>
         ${ev.title ? `<button class="btn btn-secondary btn-copy" onclick="App.copyToClipboard(\`${(ev.title||'').replace(/`/g,'\\`')}\`,this)"><i class="fa-solid fa-copy"></i> Copier</button>` : ''}
         ${ev.platform === 'Facebook' && typeof Facebook !== 'undefined' && Facebook.isConnected() ? `

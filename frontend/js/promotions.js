@@ -98,7 +98,7 @@ const Promotions = (() => {
                 ` : '<div></div>'}
               </div>
 
-              <div style="margin-top:12px;display:flex;gap:8px">
+              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn btn-ghost btn-sm" onclick="Promotions.viewPromo('${p.id}')">
                   <i class="fa-solid fa-eye"></i> Voir tout
                 </button>
@@ -107,6 +107,10 @@ const Promotions = (() => {
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="App.copyToClipboard('${(p.tiktok || '').replace(/'/g, "\\'")}')">
                   <i class="fa-brands fa-tiktok"></i> Copier TikTok
+                </button>
+                <button class="btn btn-icon btn-sm" style="color:var(--red);margin-left:auto"
+                  onclick="if(confirm('Supprimer cette promotion définitivement?')){Promotions.deletePromo('${p.id}')}" title="Supprimer">
+                  <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
             </div>
@@ -214,6 +218,15 @@ const Promotions = (() => {
     }
   }
 
+  async function deletePromo(id) {
+    try {
+      await API.deleteContent(id);
+      promotions = promotions.filter(p => p.id !== id);
+      render({ promotions });
+      App.toast('Promotion supprimée avec succès', 'success');
+    } catch (err) { App.toast(err.message, 'error'); }
+  }
+
   async function generateFromTemplate(templateName) {
     openCreator(templateName);
   }
@@ -273,5 +286,5 @@ const Promotions = (() => {
     } catch (_) { render({}); }
   }
 
-  return { init, openCreator, generate, generateFromTemplate, viewPromo };
+  return { init, openCreator, generate, generateFromTemplate, viewPromo, deletePromo };
 })();
