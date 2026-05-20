@@ -49,10 +49,6 @@ const Calendar = (() => {
         <div style="display:flex;align-items:center;gap:6px;font-size:12px">
           <div style="width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.5)"></div> Blogue
         </div>
-        ${typeof Facebook !== 'undefined' && Facebook.isConnected()
-          ? '<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)"><i class="fa-brands fa-facebook"></i> Facebook connecté — publication directe activée</div>'
-          : '<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)"><i class="fa-brands fa-facebook"></i> <span style="cursor:pointer;text-decoration:underline" onclick="Facebook.connect()">Connecter Facebook pour publier directement</span></div>'
-        }
       </div>
 
       <!-- Grille calendrier -->
@@ -101,11 +97,6 @@ const Calendar = (() => {
               <span class="tag ${item.platform==='Facebook'?'tag-blue':item.platform==='TikTok'?'tag-gold':'tag-green'}">${item.platform}</span>
               <div style="flex:1;font-size:13.5px">${item.title}</div>
               <span class="tag ${item.status==='Publié'?'tag-green':item.status==='Planifié'?'tag-blue':'tag-gray'}">${item.status}</span>
-              ${item.platform === 'Facebook' && typeof Facebook !== 'undefined' && Facebook.isConnected() ? `
-                <button class="btn btn-secondary btn-sm" onclick="Calendar.publishToFacebook('${item.id}','${item.date}')">
-                  <i class="fa-brands fa-facebook"></i> Publier
-                </button>
-              ` : ''}
               <button class="btn btn-icon" onclick="Calendar.deleteEvent('${item.id}')" title="Supprimer">
                 <i class="fa-solid fa-trash" style="color:var(--red)"></i>
               </button>
@@ -173,16 +164,6 @@ const Calendar = (() => {
           </div>
         </div>
 
-        ${typeof Facebook !== 'undefined' && Facebook.isConnected() ? `
-          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;
-            background:rgba(24,119,242,0.08);border:1px solid rgba(24,119,242,0.25);border-radius:8px">
-            <input type="checkbox" id="sch-post-now" style="accent-color:#1877F2">
-            <label for="sch-post-now" style="font-size:13px;cursor:pointer">
-              <i class="fa-brands fa-facebook" style="color:#1877F2"></i>
-              <strong>Publier maintenant sur Facebook</strong> (en plus de planifier)
-            </label>
-          </div>
-        ` : ''}
       `,
       footer: `
         <button class="btn btn-ghost" onclick="App.closeModal()">Annuler</button>
@@ -225,49 +206,14 @@ const Calendar = (() => {
     const title = document.getElementById('sch-title').value.trim();
     const date = document.getElementById('sch-date').value;
     const time = document.getElementById('sch-time').value;
-    const postNow = document.getElementById('sch-post-now')?.checked;
-
     if (!date || !title) { App.toast('Date et contenu requis', 'error'); return; }
 
     try {
       await API.scheduleContent(null, `${date}T${time}`, platform, title, scheduledImageUrl);
       App.closeModal();
       App.toast('Publication planifiée!', 'success');
-
-      if (postNow && typeof Facebook !== 'undefined' && Facebook.isConnected()) {
-        await Facebook.postToPage(title, scheduledImageUrl || null);
-      }
-
       await loadAndRender();
     } catch (err) { App.toast(err.message, 'error'); }
-  }
-
-  async function publishToFacebook(eventId, dateKey) {
-    const evs = calendarData[dateKey] || [];
-    const ev = evs.find(e => e.id === eventId);
-    const text = ev?.title || ev?.preview || '';
-    const imageUrl = ev?.imageUrl || null;
-
-    App.showModal({
-      title: 'Publier sur Facebook',
-      body: `
-        <div style="margin-bottom:12px">
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">Texte qui sera publié :</div>
-          <div class="content-text" style="background:var(--black-soft);padding:12px;border-radius:8px;max-height:200px;overflow-y:auto">${text}</div>
-        </div>
-        ${imageUrl ? `<img src="${imageUrl}" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;margin-bottom:12px">` : ''}
-        <div style="padding:10px 12px;background:rgba(24,119,242,0.08);border:1px solid rgba(24,119,242,0.25);border-radius:8px;font-size:12.5px;color:var(--text-secondary)">
-          <i class="fa-brands fa-facebook" style="color:#1877F2"></i>
-          Publication directe sur votre page Facebook Business
-        </div>
-      `,
-      footer: `
-        <button class="btn btn-ghost" onclick="App.closeModal()">Annuler</button>
-        <button class="btn btn-primary" onclick="App.closeModal();Facebook.postToPage(\`${text.replace(/`/g,'\\`')}\`, ${imageUrl ? `'${imageUrl}'` : 'null'})">
-          <i class="fa-brands fa-facebook"></i> Publier maintenant
-        </button>
-      `
-    });
   }
 
   let draggedId = null;
@@ -310,11 +256,6 @@ const Calendar = (() => {
         </button>
         <button class="btn btn-ghost" onclick="App.closeModal()">Fermer</button>
         ${ev.title ? `<button class="btn btn-secondary btn-copy" onclick="App.copyToClipboard(\`${(ev.title||'').replace(/`/g,'\\`')}\`,this)"><i class="fa-solid fa-copy"></i> Copier</button>` : ''}
-        ${ev.platform === 'Facebook' && typeof Facebook !== 'undefined' && Facebook.isConnected() ? `
-          <button class="btn btn-primary" onclick="App.closeModal();Facebook.postToPage(\`${(ev.title||'').replace(/`/g,'\\`')}\`,${ev.imageUrl?`'${ev.imageUrl}'`:'null'})">
-            <i class="fa-brands fa-facebook"></i> Publier sur Facebook
-          </button>
-        ` : ''}
       `
     });
   }
@@ -347,5 +288,5 @@ const Calendar = (() => {
     await loadAndRender();
   }
 
-  return { init, prevMonth, nextMonth, goToday, openScheduler, saveSchedule, previewImage, handleImageFile, handleDragStart, handleDrop, showEventDetail, deleteEvent, publishToFacebook };
+  return { init, prevMonth, nextMonth, goToday, openScheduler, saveSchedule, previewImage, handleImageFile, handleDragStart, handleDrop, showEventDetail, deleteEvent };
 })();
