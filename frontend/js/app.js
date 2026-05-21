@@ -12,7 +12,8 @@ const App = (() => {
     reviews: { title: 'Avis Google', init: () => Reviews.init() },
     seasonal: { title: 'Contenu saisonnier', init: () => Seasonal.init() },
     reports: { title: 'Rapport mensuel', init: () => Reports.init() },
-    promotions: { title: 'Promotions saisonnières', init: () => Promotions.init() }
+    promotions: { title: 'Promotions saisonnières', init: () => Promotions.init() },
+    strategies: { title: 'Stratégie Marketing', init: () => STRAT.init() }
   };
 
   let currentModule = 'dashboard';
@@ -121,6 +122,7 @@ const App = (() => {
 
   async function syncPipeline() {
     const btn = document.getElementById('btn-sync');
+    if (!btn) return;
     btn.querySelector('i').classList.add('fa-spin');
     try {
       const result = await API.syncPipeline();
