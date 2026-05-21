@@ -249,8 +249,9 @@ const App = (() => {
     // Init dashboard
     navigate('dashboard');
 
-    // Auto-sync Pipeline on load
+    // Auto-sync Pipeline on load + periodic
     setTimeout(syncPipeline, 2000);
+    setInterval(syncPipeline, HEUREKA_CONFIG.SYNC_INTERVAL_MS);
   }
 
   // Public API
