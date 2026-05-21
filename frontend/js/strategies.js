@@ -494,19 +494,19 @@ const STRAT = (() => {
       </div>`;
   }
 
-  // ── Tab IA Claude ────────────────────────────────────────
+  // ── Tab IA Gemini ─────────────────────────────────────────
   function tabIA(s) {
-    const hasKey = !!(HEUREKA_CONFIG.ANTHROPIC_API_KEY && HEUREKA_CONFIG.ANTHROPIC_API_KEY.trim());
+    const hasKey = !!(HEUREKA_CONFIG.GEMINI_API_KEY && HEUREKA_CONFIG.GEMINI_API_KEY.trim());
     return `
       ${!hasKey ? `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--orange)">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        Clé API manquante — ajoutez <code style="background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px">ANTHROPIC_API_KEY</code> dans <code style="background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px">config.js</code>
+        Clé API manquante — ajoutez <code style="background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px">GEMINI_API_KEY</code> dans <code style="background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px">config.js</code>
       </div>` : ''}
       <div style="font-size:13px;color:var(--text-secondary);line-height:1.65;margin-bottom:20px">
-        Claude va analyser les données de cette stratégie et fournir des recommandations personnalisées basées sur vos résultats.
+        Gemini va analyser les données de cette stratégie et fournir des recommandations personnalisées basées sur vos résultats.
       </div>
       <button class="btn btn-primary" onclick="STRAT.generateAnalysis()" ${!hasKey?'disabled':''}>
-        <i class="fa-solid fa-robot"></i> Analyser avec Claude IA
+        <i class="fa-solid fa-robot"></i> Analyser avec Gemini IA
       </button>
       <div id="strat-ai-result" style="margin-top:20px"></div>`;
   }
@@ -598,38 +598,32 @@ const STRAT = (() => {
     await saveToSheet(s);
   }
 
-  // ── AI analysis ──────────────────────────────────────────
+  // ── AI analysis (Gemini) ─────────────────────────────────
   async function generateAnalysis() {
     const s = getById(currentId);
     if (!s) return;
-    const key = (HEUREKA_CONFIG.ANTHROPIC_API_KEY || '').trim();
-    if (!key) { App.toast('Clé API Claude manquante dans config.js', 'error'); return; }
+    const key = (HEUREKA_CONFIG.GEMINI_API_KEY || '').trim();
+    if (!key) { App.toast('Clé API Gemini manquante dans config.js', 'error'); return; }
 
     const resultEl = document.getElementById('strat-ai-result');
     if (resultEl) resultEl.innerHTML = `
       <div style="color:var(--text-muted);font-size:13px;padding:24px;text-align:center">
         <i class="fa-solid fa-spinner fa-spin" style="color:var(--gold);font-size:22px;margin-bottom:12px;display:block"></i>
-        Analyse en cours avec Claude...
+        Analyse en cours avec Gemini...
       </div>`;
 
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: buildPrompt(s) }]
-        })
-      });
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: buildPrompt(s) }] }] })
+        }
+      );
       if (!resp.ok) throw new Error('Erreur API ' + resp.status);
       const data = await resp.json();
-      renderAnalysis(data.content?.[0]?.text || '');
+      renderAnalysis(data.candidates?.[0]?.content?.parts?.[0]?.text || '');
     } catch(e) {
       const el = document.getElementById('strat-ai-result');
       if (el) el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px">
