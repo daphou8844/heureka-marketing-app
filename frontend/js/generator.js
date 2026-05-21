@@ -326,7 +326,7 @@ const Generator = (() => {
       sendReviewEmail: document.getElementById('g-avis').checked
     };
 
-    App.showLoading('Claude génère votre contenu marketing...');
+    App.showLoading('Gemini génère votre contenu marketing...');
 
     try {
       // Upload photos first

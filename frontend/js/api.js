@@ -151,17 +151,69 @@ const API = (() => {
     addProject: (p) => safe('addProject', () => post('addProject', {project:p}), { id: 'DEMO'+Date.now(), success: true }),
     updateProject: (id, d) => safe('updateProject', () => post('updateProject', {id, data:d}), { success: true }),
 
-    generateContent: (projectId, projectData) => safe('generateContent',
-      () => post('generateContent', { projectId, projectData }),
-      demoDelay({
-        contentId: 'DEMO'+Date.now(),
-        projectId: 'P'+Date.now(),
-        facebook: `🏠 Projet ${projectData.type || 'rénovation'} terminé à ${projectData.ville || 'Saint-Jean'}!\n\n${projectData.description || ''}\n\nUn projet réalisé avec passion par notre équipe des Gestions Heúrēka.\nChaque détail compte pour nous. La satisfaction de nos clients, c'est notre priorité.\n\n📞 Soumission gratuite : gestionsheureka.net\n\n#GestionsHeureka #RenovationQuebec #${(projectData.type||'Renovation').replace(/[^a-zA-Z]/g,'')} #SaintJeanSurRichelieu #Maison #Quebec`,
-        tiktok: `[ACCROCHE 3 SEC]\nVous allez pas croire la transformation à ${projectData.ville || 'Saint-Jean'}!\n\n[NARRATION]\n${projectData.description || 'Un projet exceptionnel vient d\'être terminé.'}\n\nDurée des travaux : ${projectData.duree || 'quelques semaines'}.\nRésultat : le client était aux anges!\n\n[TEXTE À L\'ÉCRAN]\n- 📍 ${projectData.ville || 'Saint-Jean-sur-Richelieu'}\n- 🔨 ${projectData.type || 'Rénovation complète'}\n- ⏱️ ${projectData.duree || 'Travaux terminés'}\n- ✅ 100% satisfait\n- 📞 gestionsheureka.net\n\n[SON SUGGÉRÉ] Before/after reveal musical\n[HASHTAGS] #Renovation #Quebec #GestionsHeureka #AvantApres #${(projectData.ville||'SaintJean').replace(/[^a-zA-Z]/g,'')}`,
-        blog: `# ${projectData.type || 'Rénovation'} réussie à ${projectData.ville || 'Saint-Jean-sur-Richelieu'} | Les Gestions Heúrēka\n\n## Introduction\n${projectData.description || 'Un projet remarquable vient d\'être complété par notre équipe.'}\n\n## Le défi du client\nCommme bien des propriétaires de la région de ${projectData.ville || 'Saint-Jean-sur-Richelieu'}, ce client cherchait une entreprise fiable, licenciée RBQ et avec de l\'expérience dans ce type de travaux.\n\n## Notre approche\nNotre équipe a analysé le projet, proposé les meilleures solutions et réalisé les travaux en ${projectData.duree || 'quelques semaines'}.\n\n## Résultat\nLe client est pleinement satisfait. C'est pourquoi nous avons 82 avis 5 étoiles sur Google.\n\n**Vous avez un projet similaire?** Contactez-nous pour une soumission gratuite.\n\n*Les Gestions Heúrēka — RBQ 5818-7162-01 — gestionsheureka.net*\n\n**Méta-description:** ${projectData.type || 'Rénovation'} professionnelle à ${projectData.ville || 'Saint-Jean-sur-Richelieu'} par Les Gestions Heúrēka, entrepreneur licencié RBQ. Soumission gratuite.`,
-        gallery: `**TITRE:** ${projectData.type || 'Rénovation'} — ${projectData.ville || 'Saint-Jean-sur-Richelieu'} | Les Gestions Heúrēka\n\n**DESCRIPTION SEO:**\nCe projet de ${(projectData.type||'rénovation').toLowerCase()} réalisé à ${projectData.ville || 'Saint-Jean-sur-Richelieu'} illustre parfaitement le savoir-faire de l'équipe des Gestions Heúrēka. Chaque étape a été réalisée dans les règles de l'art, avec des matériaux de qualité supérieure et dans le respect des délais convenus avec le client.\n\nLes Gestions Heúrēka, entrepreneur général licencié RBQ 5818-7162-01, œuvre dans la région de Saint-Jean-sur-Richelieu et la Montérégie depuis plusieurs années.\n\n**ALT TEXT:** Photo ${(projectData.type||'rénovation').toLowerCase()} maison ${projectData.ville || 'Saint-Jean-sur-Richelieu'} Québec — Les Gestions Heúrēka entrepreneur général\n\n**MOTS-CLÉS:** ${projectData.type || 'rénovation'} ${projectData.ville || 'Saint-Jean'}, entrepreneur général Montérégie, rénovation résidentielle Québec, RBQ 5818-7162-01`
-      })
-    ),
+    // ── Génération IA — appel Gemini direct depuis le navigateur ──
+    generateContent: async (projectId, projectData) => {
+      const key = (HEUREKA_CONFIG.GEMINI_API_KEY || '').trim();
+      if (!key) {
+        console.warn('[API] GEMINI_API_KEY manquante — données démo');
+        return demoDelay({
+          contentId: 'DEMO' + Date.now(),
+          facebook: `🏠 Projet ${projectData.type || 'rénovation'} terminé à ${projectData.ville || 'Saint-Jean'}!\n\n${projectData.description || ''}\n\nUn projet réalisé avec passion par notre équipe des Gestions Heúrēka.\n\n📞 Soumission gratuite : gestionsheureka.net\n\n#GestionsHeureka #RenovationQuebec #SaintJeanSurRichelieu #Maison`,
+          tiktok: `[ACCROCHE 3 SEC]\nTransformation à ${projectData.ville || 'Saint-Jean'}!\n\n[NARRATION]\n${projectData.description || ''}\n\n[HASHTAGS] #Renovation #Quebec #GestionsHeureka`,
+          blog: `# ${projectData.type || 'Rénovation'} à ${projectData.ville || 'Saint-Jean-sur-Richelieu'} | Les Gestions Heúrēka\n\n${projectData.description || ''}\n\n*Les Gestions Heúrēka — RBQ 5818-7162-01 — gestionsheureka.net*`,
+          gallery: `**TITRE:** ${projectData.type || 'Rénovation'} — ${projectData.ville || 'Saint-Jean-sur-Richelieu'}\n\n**ALT TEXT:** Photo rénovation maison ${projectData.ville || ''} Québec — Les Gestions Heúrēka`
+        });
+      }
+      const emailField = projectData.sendReviewEmail
+        ? `,\n  "reviewEmail": "Email poli en français demandant un avis Google (3-4 phrases, mentionner le type de travaux et remercier le client)"` : '';
+      const prompt = `Tu es un expert en marketing de contenu pour Les Gestions Heúrēka, entrepreneur général en rénovation résidentielle au Québec (Saint-Jean-sur-Richelieu, Montérégie). RBQ 5818-7162-01.
+
+Un projet vient d'être terminé. Génère du contenu marketing professionnel et engageant en français québécois.
+
+PROJET :
+- Type de travaux : ${projectData.type}
+- Ville : ${projectData.ville}
+- Durée des travaux : ${projectData.duree || 'non précisée'}
+- Nom du client : ${projectData.client || 'client anonyme'}
+- Description : ${projectData.description}
+- Infos supplémentaires : ${projectData.extra || 'aucune'}
+
+Réponds UNIQUEMENT avec ce JSON valide (sans balises markdown ni backticks autour du JSON) :
+{
+  "facebook": "Post Facebook complet avec emojis, hashtags québécois pertinents, appel à l'action vers gestionsheureka.net. 200-280 mots.",
+  "tiktok": "Script TikTok structuré avec [ACCROCHE 3 SEC], [NARRATION], [TEXTE À L'ÉCRAN], [SON SUGGÉRÉ], [HASHTAGS]. Contenu pour 30-60 secondes.",
+  "blog": "Article de blogue SEO complet : titre # H1, introduction, 3 sections ## H2, conclusion + CTA, méta-description. 450-600 mots.",
+  "gallery": "Fiche galerie : TITRE:, DESCRIPTION SEO: (150-200 mots), ALT TEXT:, MOTS-CLÉS: (8-10 mots-clés locaux)"${emailField}
+}`;
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+      );
+      if (!resp.ok) throw new Error('Erreur API Gemini ' + resp.status);
+      const geminiData = await resp.json();
+      const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      let content = {};
+      try {
+        const match = rawText.match(/\{[\s\S]*\}/);
+        content = JSON.parse(match ? match[0] : rawText);
+      } catch(e) { throw new Error('Réponse Gemini invalide — veuillez réessayer'); }
+      const contentId = 'MCT-' + Date.now();
+      if (BASE_URL) {
+        fetch(BASE_URL, {
+          method: 'POST', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'addRow', sheet: 'Marketing_Contenu', data: {
+            ID_Contenu: contentId, Projet_ID: projectId || '', Client: projectData.client || '',
+            Type_Travaux: projectData.type, Ville: projectData.ville,
+            Date_Fin_Chantier: new Date().toISOString().split('T')[0],
+            Statut_Contenu: 'Généré',
+            Plateforme: [projectData.genFacebook && 'Facebook', projectData.genTiktok && 'TikTok'].filter(Boolean).join(', '),
+            Texte_Contenu: content.facebook || '', Date_Publication: ''
+          }}), redirect: 'follow'
+        }).catch(() => {});
+      }
+      return { contentId, ...content };
+    },
 
     getCalendar: (y, m) => safe('getCalendar', () => request('getCalendar', {year:y, month:m}), DEMO_DATA.calendar),
     scheduleContent: (cid, date, platform) => safe('scheduleContent',
@@ -197,7 +249,7 @@ const API = (() => {
     getMonthlyReport: (y, m) => safe('getMonthlyReport', () => request('getMonthlyReport', {year:y, month:m}), DEMO_DATA.report),
     saveStats: (stats) => safe('saveStats',
       () => post('saveStats', {stats}),
-      demoDelay({ report: { stats, analysis: `Analyse démo: En mode démonstration, votre rapport sera généré par Claude IA une fois le backend configuré. Vos statistiques de ${stats.facebookViews||0} vues Facebook et ${stats.tiktokViews||0} vues TikTok montrent une bonne activité pour une PME en rénovation.`, nextMonthPlan: 'Plan du mois prochain: 1) Poster 2x/semaine sur Facebook, 2) Créer 1 TikTok before/after par semaine, 3) Relancer les clients récents pour des avis Google.', publications: [] }})
+      demoDelay({ report: { stats, analysis: `Analyse démo: En mode démonstration, votre rapport sera généré par Gemini IA une fois le backend configuré. Vos statistiques de ${stats.facebookViews||0} vues Facebook et ${stats.tiktokViews||0} vues TikTok montrent une bonne activité pour une PME en rénovation.`, nextMonthPlan: 'Plan du mois prochain: 1) Poster 2x/semaine sur Facebook, 2) Créer 1 TikTok before/after par semaine, 3) Relancer les clients récents pour des avis Google.', publications: [] }})
     ),
 
     getPromotions: () => safe('getPromotions', () => request('getPromotions'), DEMO_DATA.promotions),
@@ -219,11 +271,12 @@ const API = (() => {
       demoDelay({ success: true })
     ),
 
+    // ── Pipeline sync — corrigé: parser res.data (réponse = {status:'ok', data:[...]}) ──
     syncPipeline: () => safe('syncPipeline',
       async () => {
         const res = await fetch(HEUREKA_CONFIG.APPS_SCRIPT_URL+'?action=getData&sheet=Marketing_Contenu', {redirect:'follow'});
-        const data = await res.json();
-        const pending = Array.isArray(data) ? data.filter(r=>r.Statut_Contenu==='En attente de contenu') : [];
+        const json = await res.json();
+        const pending = (json.data || []).filter(r=>r.Statut_Contenu==='En attente de contenu');
         return {
           newProjects: pending.length,
           projects: pending.map(r=>({id:r.ID_Contenu, type:r.Type_Travaux, ville:r.Ville, client:r.Client, dateFin:r.Date_Fin_Chantier, projetId:r.Projet_ID}))
@@ -234,8 +287,8 @@ const API = (() => {
     getPipelineProjects: () => safe('getPipelineProjects',
       async () => {
         const res = await fetch(HEUREKA_CONFIG.APPS_SCRIPT_URL+'?action=getData&sheet=Marketing_Contenu', {redirect:'follow'});
-        const data = await res.json();
-        const pending = Array.isArray(data) ? data.filter(r=>r.Statut_Contenu==='En attente de contenu') : [];
+        const json = await res.json();
+        const pending = (json.data || []).filter(r=>r.Statut_Contenu==='En attente de contenu');
         return { projects: pending.map(r=>({id:r.ID_Contenu, type:r.Type_Travaux, ville:r.Ville, client:r.Client, dateFin:r.Date_Fin_Chantier, projetId:r.Projet_ID})) };
       },
       DEMO_DATA.pipeline
