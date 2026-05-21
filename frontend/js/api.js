@@ -185,13 +185,25 @@ Réponds UNIQUEMENT avec ce JSON valide (sans balises markdown ni backticks auto
   "blog": "Article de blogue SEO complet : titre # H1, introduction, 3 sections ## H2, conclusion + CTA, méta-description. 450-600 mots.",
   "gallery": "Fiche galerie : TITRE:, DESCRIPTION SEO: (150-200 mots), ALT TEXT:, MOTS-CLÉS: (8-10 mots-clés locaux)"${emailField}
 }`;
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        { method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
-      );
-      if (!resp.ok) throw new Error('Erreur API Gemini ' + resp.status);
-      const geminiData = await resp.json();
+      let geminiData, lastStatus;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+          { method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+        );
+        lastStatus = resp.status;
+        if (resp.status === 429) {
+          if (attempt < 3) {
+            await new Promise(r => setTimeout(r, attempt * 4000));
+            continue;
+          }
+          throw new Error('Limite Gemini atteinte (429) — attendez 1 minute et réessayez. La clé gratuite permet ~15 requêtes/minute.');
+        }
+        if (!resp.ok) throw new Error('Erreur API Gemini ' + resp.status);
+        geminiData = await resp.json();
+        break;
+      }
       const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
       let content = {};
       try {
