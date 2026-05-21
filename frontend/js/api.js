@@ -104,6 +104,22 @@ const DEMO_MODE = false;
 // Simuler un délai réseau en mode démo
 const demoDelay = (data) => new Promise(resolve => setTimeout(() => resolve(data), 400));
 
+// Parse la réponse JSON de Gemini de façon robuste — gère les vrais \n dans les valeurs
+function _parseGeminiJson(text) {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  const block = match[0];
+  try { return JSON.parse(block); } catch(e) {}
+  // 2e tentative : échapper les vrais retours à la ligne à l'intérieur des strings JSON
+  try {
+    const cleaned = block.replace(/"((?:[^"\\]|\\[\s\S])*)"/g,
+      (_, inner) => '"' + inner.replace(/\r?\n/g, '\\n') + '"'
+    );
+    return JSON.parse(cleaned);
+  } catch(e) {}
+  return null;
+}
+
 const API = (() => {
   const BASE_URL = APPS_SCRIPT_URL;
 
@@ -205,11 +221,7 @@ Réponds UNIQUEMENT avec ce JSON valide (sans balises markdown ni backticks auto
         break;
       }
       const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      let content = {};
-      try {
-        const match = rawText.match(/\{[\s\S]*\}/);
-        content = JSON.parse(match ? match[0] : rawText);
-      } catch(e) { throw new Error('Réponse Gemini invalide — veuillez réessayer'); }
+      const content = _parseGeminiJson(rawText) || { facebook: rawText };
       const contentId = 'MCT-' + Date.now();
       if (BASE_URL) {
         fetch(BASE_URL, {

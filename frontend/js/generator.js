@@ -353,7 +353,17 @@ const Generator = (() => {
       App.toast('Contenu généré avec succès!', 'success');
     } catch (err) {
       App.hideLoading();
-      App.toast(`Erreur de génération: ${err.message}`, 'error');
+      App.toast(`Erreur: ${err.message}`, 'error');
+      const cs = document.getElementById('content-section');
+      if (cs) cs.innerHTML = `
+        <div class="empty-state">
+          <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:32px"></i>
+          <h3 style="color:var(--red);margin-top:12px">Erreur de génération</h3>
+          <p style="max-width:320px;text-align:center;color:var(--text-secondary)">${err.message}</p>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="Generator.submitForm()">
+            <i class="fa-solid fa-rotate-right"></i> Réessayer
+          </button>
+        </div>`;
     }
   }
 
