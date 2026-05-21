@@ -71,7 +71,8 @@ const STRAT = (() => {
     if (!url) return;
     try {
       const r = await fetch(url + '?action=getData&sheet=Strategies', { redirect: 'follow' });
-      const data = await r.json();
+      const res = await r.json();
+      const data = Array.isArray(res) ? res : (res.data || []);
       if (!Array.isArray(data) || !data.length) return;
       const sheetStrats = data.map(row => ({
         id: row.ID_Strategie,
