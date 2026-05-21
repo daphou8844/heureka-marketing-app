@@ -7,6 +7,7 @@ const Generator = (() => {
   let pendingProjects = [];
   let uploadedFiles = [];
   let generatedContent = null;
+  let drivePhotos = [];
 
   const TYPES = [
     'Portes et fenêtres',
@@ -90,6 +91,30 @@ const Generator = (() => {
             onchange="Generator.handleFileSelect(event)">
           <div class="file-preview" id="file-preview"></div>
         </div>
+
+        <!-- Photos depuis Drive (auto-chargées si chantier lié) -->
+        ${drivePhotos.length > 0 ? `
+        <div class="form-group">
+          <label class="form-label" style="display:flex;align-items:center;gap:8px">
+            <i class="fa-solid fa-folder-open" style="color:var(--gold)"></i>
+            Photos du chantier Drive (${drivePhotos.length} photo${drivePhotos.length > 1 ? 's' : ''})
+          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+            ${drivePhotos.map(p => `
+              <a href="${p.viewUrl}" target="_blank" title="${p.fileName}"
+                style="display:block;border-radius:6px;overflow:hidden;
+                       border:1px solid var(--black-border);flex-shrink:0">
+                <img src="${p.thumbnailUrl}" alt="${p.fileName}"
+                  style="width:80px;height:80px;object-fit:cover;display:block"
+                  onerror="this.parentElement.style.display='none'" loading="lazy">
+              </a>
+            `).join('')}
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">
+            Cliquer pour ouvrir dans Drive · Les miniatures s'affichent si vous êtes connecté à Google
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Options de génération -->
         <div class="section-title">Contenu à générer</div>
@@ -300,6 +325,24 @@ const Generator = (() => {
     document.getElementById('g-duree').value = p.duree || '';
     document.getElementById('g-desc').value = p.description || '';
     App.toast('Formulaire prérempli avec les données Pipeline!', 'success');
+
+    if (p.driveId) {
+      try {
+        App.toast('Chargement des photos Drive...', 'info');
+        const result = await API.getChantierPhotos(p.driveId);
+        if (result.status === 'ok' && result.photos && result.photos.length > 0) {
+          drivePhotos = result.photos;
+          document.getElementById('form-section').innerHTML = renderForm(p);
+          App.toast(`${result.photos.length} photo(s) trouvée(s) dans Drive!`, 'success');
+        } else {
+          drivePhotos = [];
+        }
+      } catch(_) {
+        drivePhotos = [];
+      }
+    } else {
+      drivePhotos = [];
+    }
   }
 
   async function submitForm() {
@@ -413,6 +456,7 @@ const Generator = (() => {
   function resetForm() {
     uploadedFiles = [];
     generatedContent = null;
+    drivePhotos = [];
     init();
   }
 
@@ -462,6 +506,7 @@ const Generator = (() => {
 
   return {
     init, submitForm, prefill, resetForm, scheduleContent, confirmSchedule,
-    toggleLabel, handleDragOver, handleDrop, handleFileSelect, removeFile
+    toggleLabel, handleDragOver, handleDrop, handleFileSelect, removeFile,
+    getDrivePhotos: (driveId) => API.getChantierPhotos(driveId)
   };
 })();

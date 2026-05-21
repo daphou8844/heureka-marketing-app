@@ -313,9 +313,28 @@ Réponds UNIQUEMENT avec ce JSON valide (sans balises markdown ni backticks auto
         const res = await fetch(HEUREKA_CONFIG.APPS_SCRIPT_URL+'?action=getData&sheet=Marketing_Contenu', {redirect:'follow'});
         const json = await res.json();
         const pending = (json.data || []).filter(r=>r.Statut_Contenu==='En attente de contenu');
-        return { projects: pending.map(r=>({id:r.ID_Contenu, type:r.Type_Travaux, ville:r.Ville, client:r.Client, dateFin:r.Date_Fin_Chantier, projetId:r.Projet_ID})) };
+        // Chercher les Drive_ID dans l'onglet Chantiers pour afficher les photos
+        let chantierMap = {};
+        try {
+          const rc = await fetch(HEUREKA_CONFIG.APPS_SCRIPT_URL+'?action=getData&sheet=Chantiers', {redirect:'follow'});
+          const jc = await rc.json();
+          (jc.data || []).forEach(r => { if (r.Projet_ID && r.Drive_ID) chantierMap[r.Projet_ID] = r.Drive_ID; });
+        } catch(_) {}
+        return { projects: pending.map(r=>({
+          id:r.ID_Contenu, type:r.Type_Travaux, ville:r.Ville, client:r.Client,
+          dateFin:r.Date_Fin_Chantier, projetId:r.Projet_ID,
+          driveId: chantierMap[r.Projet_ID] || ''
+        })) };
       },
       DEMO_DATA.pipeline
+    ),
+
+    getChantierPhotos: (driveId) => safe('getChantierPhotos',
+      async () => {
+        const res = await fetch(BASE_URL + '?action=getChantierPhotos&driveId=' + encodeURIComponent(driveId), { redirect: 'follow' });
+        return await res.json();
+      },
+      { status: 'ok', photos: [] }
     ),
 
     uploadPhoto: async (file, projectId, photoType, type, ville) => {
