@@ -18,6 +18,15 @@ const STRAT = (() => {
   function newId() { return 'str_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
 
   // ── Sheet sync ───────────────────────────────────────────
+  const LS_SYNCED = 'mkt_strategies_synced';
+  function getSyncedIds() {
+    try { return new Set(JSON.parse(localStorage.getItem(LS_SYNCED) || '[]')); } catch(e) { return new Set(); }
+  }
+  function markSynced(id) {
+    const ids = getSyncedIds(); ids.add(id);
+    localStorage.setItem(LS_SYNCED, JSON.stringify([...ids]));
+  }
+
   async function saveToSheet(strat) {
     const url = HEUREKA_CONFIG.APPS_SCRIPT_URL;
     if (!url) return;
@@ -43,12 +52,17 @@ const STRAT = (() => {
       Date_Fin: strat.date_fin || '',
       Date_Cree: strat.date_cree || new Date().toISOString()
     };
+    const alreadyInSheet = getSyncedIds().has(strat.id);
+    const action = alreadyInSheet ? 'updateRow' : 'addRow';
     try {
-      await fetch(url, {
+      const r = await fetch(url, {
         method: 'POST',
-        body: JSON.stringify({ action: 'updateRow', sheet: 'Strategies', key: 'ID_Strategie', data: row }),
+        body: JSON.stringify({ action, sheet: 'Strategies', key: 'ID_Strategie', data: row }),
         redirect: 'follow'
       });
+      const res = await r.json().catch(() => ({}));
+      if (res.status === 'ok' || res.result === 'success' || alreadyInSheet) markSynced(strat.id);
+      if (!alreadyInSheet) markSynced(strat.id);
     } catch(e) {}
   }
 
@@ -85,6 +99,7 @@ const STRAT = (() => {
       const localOnly = strategies.filter(s => !sheetIds.has(s.id));
       strategies = [...sheetStrats, ...localOnly];
       save();
+      sheetStrats.forEach(s => markSynced(s.id));
       if (!currentId) renderList();
     } catch(e) {}
   }
