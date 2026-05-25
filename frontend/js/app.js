@@ -79,7 +79,7 @@ const App = (() => {
     document.getElementById('modal-overlay').style.display = 'none';
   }
 
-  function showLoading(text = 'Génération en cours avec Claude IA...') {
+  function showLoading(text = 'Génération en cours avec Gemini...') {
     document.getElementById('loading-text').textContent = text;
     document.getElementById('loading-overlay').style.display = 'flex';
   }

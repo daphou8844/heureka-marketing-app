@@ -129,7 +129,7 @@ const Promotions = (() => {
   function openCreator(template = null) {
     App.showModal({
       title: 'Créer une promotion',
-      subtitle: 'Claude génère le post Facebook, le script TikTok et l\'email client',
+      subtitle: 'Gemini génère le post Facebook, le script TikTok et l\'email client',
       body: `
         <div class="form-group">
           <label class="form-label">Nom de la promotion</label>

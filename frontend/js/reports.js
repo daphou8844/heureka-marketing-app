@@ -65,9 +65,9 @@ const Reports = (() => {
         </div>
       </div>
 
-      <!-- Analyse Claude -->
+      <!-- Analyse Gemini -->
       ${analysis ? `
-        <div class="section-title">🤖 Analyse Claude IA</div>
+        <div class="section-title">🤖 Analyse Gemini IA</div>
         <div class="content-block" style="margin-bottom:24px">
           <div class="content-block-body">
             <div class="content-text" style="line-height:1.8">${analysis}</div>
@@ -78,7 +78,7 @@ const Reports = (() => {
           <div style="font-size:24px;margin-bottom:12px">🤖</div>
           <div style="font-size:14px;font-weight:600;color:var(--text-secondary)">Aucune analyse pour ce mois</div>
           <div style="font-size:12px;color:var(--text-muted);margin:8px 0 16px">
-            Saisissez vos statistiques pour que Claude génère l'analyse
+            Saisissez vos statistiques pour que Gemini génère l'analyse
           </div>
           <button class="btn btn-primary" onclick="Reports.openStatsEntry()">
             <i class="fa-solid fa-keyboard"></i> Saisir mes statistiques
@@ -180,14 +180,14 @@ const Reports = (() => {
       footer: `
         <button class="btn btn-ghost" onclick="App.closeModal()">Annuler</button>
         <button class="btn btn-primary" onclick="Reports.saveStats()">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Sauvegarder et analyser avec Claude
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Sauvegarder et analyser avec Gemini
         </button>
       `
     });
   }
 
   async function saveStats() {
-    App.showLoading('Claude analyse vos statistiques du mois...');
+    App.showLoading('Gemini analyse vos statistiques du mois...');
     App.closeModal();
     try {
       const stats = {

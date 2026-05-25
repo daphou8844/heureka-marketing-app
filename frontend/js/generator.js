@@ -465,7 +465,7 @@ const Generator = (() => {
       <div class="page-header">
         <div>
           <div class="page-title">Générateur de projet terminé</div>
-          <div class="page-subtitle">Créez tout votre contenu marketing en un clic grâce à Claude IA</div>
+          <div class="page-subtitle">Créez tout votre contenu marketing en un clic grâce à Gemini IA</div>
         </div>
       </div>
 
@@ -478,7 +478,7 @@ const Generator = (() => {
           <div style="display:flex;gap:10px;margin-top:20px">
             <button class="btn btn-primary" style="flex:1" onclick="Generator.submitForm()">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
-              Générer avec Claude IA
+              Générer avec Gemini IA
             </button>
           </div>
         </div>

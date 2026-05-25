@@ -225,7 +225,7 @@ const STRAT = (() => {
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:18px;font-weight:700;color:var(--text-primary)">Analyse de marché &amp; Tendances</div>
-            <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Analyse IA du marché de la construction au Québec — générée par Claude</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Analyse IA du marché de la construction au Québec — générée par Gemini</div>
           </div>
           <button class="btn btn-primary" onclick="STRAT.analyzeMarket()">
             <i class="fa-solid fa-robot"></i> Analyser le marché
@@ -290,7 +290,7 @@ const STRAT = (() => {
       ['idees','fa-lightbulb','Idées'],
       ['actions','fa-list-check','Actions'],
       ['resultats','fa-chart-pie','Résultats'],
-      ['ia','fa-robot','IA Claude']
+      ['ia','fa-robot','IA Gemini']
     ];
     document.getElementById('strat-panel').innerHTML = `
       <div class="strat-panel-header">
@@ -728,13 +728,13 @@ Réponds UNIQUEMENT avec ce JSON valide (aucun markdown autour) :
 
   async function analyzeMarket() {
     const hasKey = !!(HEUREKA_CONFIG.CLAUDE_API_KEY && HEUREKA_CONFIG.CLAUDE_API_KEY.trim());
-    if (!hasKey) { App.toast('Clé API Claude manquante dans config.js', 'error'); return; }
+    if (!HEUREKA_CONFIG.APPS_SCRIPT_URL) { App.toast('URL Apps Script manquante dans config.js', 'error'); return; }
 
     const resultEl = document.getElementById('strat-market-result');
     if (resultEl) resultEl.innerHTML = `
       <div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">
         <i class="fa-solid fa-spinner fa-spin" style="color:var(--gold);font-size:28px;margin-bottom:14px;display:block"></i>
-        Analyse du marché en cours avec Claude...
+        Analyse du marché en cours avec Gemini...
       </div>`;
 
     const ctx = typeof HEUREKA_CONTEXT !== 'undefined' ? HEUREKA_CONTEXT : 'Les Gestions Heuréka est un entrepreneur général basé à Saint-Jean-sur-Richelieu (Québec), spécialisé en : portes & fenêtres, revêtement extérieur, gouttières/soffites/fascias, rénovation intérieure. Équipe à l\'interne, aucun sous-traitant. Fondée en 1999. RBQ 5818-7162-01.';

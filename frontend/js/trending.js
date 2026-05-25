@@ -35,7 +35,7 @@ const Trending = (() => {
         <div>
           <div style="font-size:14px;font-weight:600;color:var(--gold)">Analyse IA automatique</div>
           <div style="font-size:12.5px;color:var(--text-secondary);margin-top:2px">
-            Chaque lundi à 7h00, Claude analyse les sources TikTok et génère des idées adaptées à la rénovation québécoise.
+            Chaque lundi à 7h00, Gemini analyse les sources TikTok et génère des idées adaptées à la rénovation québécoise.
             La prochaine mise à jour se fait automatiquement.
           </div>
         </div>
