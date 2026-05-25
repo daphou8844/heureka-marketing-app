@@ -169,11 +169,10 @@ const API = (() => {
     addProject: (p) => safe('addProject', () => post('addProject', {project:p}), { id: 'DEMO'+Date.now(), success: true }),
     updateProject: (id, d) => safe('updateProject', () => post('updateProject', {id, data:d}), { success: true }),
 
-    // ── Génération IA — appel Claude direct depuis le navigateur ──
+    // ── Génération IA — appel via GAS (clé Gemini côté serveur, jamais exposée) ──
     generateContent: async (projectId, projectData) => {
-      const key = (HEUREKA_CONFIG.CLAUDE_API_KEY || '').trim();
-      if (!key) {
-        console.warn('[API] CLAUDE_API_KEY manquante — données démo');
+      if (!BASE_URL) {
+        console.warn('[API] URL GAS manquante — données démo');
         return demoDelay({
           contentId: 'DEMO' + Date.now(),
           facebook: `🏠 Projet ${projectData.type || 'rénovation'} terminé à ${projectData.ville || 'Saint-Jean'}!\n\n${projectData.description || ''}\n\nUn projet réalisé avec passion par notre équipe des Gestions Heúrēka.\n\n📞 Soumission gratuite : gestionsheureka.net\n\n#GestionsHeureka #RenovationQuebec #SaintJeanSurRichelieu #Maison`,
@@ -205,34 +204,16 @@ Réponds UNIQUEMENT avec ce JSON valide (sans balises markdown ni backticks auto
   "blog": "Article de blogue SEO complet : titre # H1, introduction, 3 sections ## H2, conclusion + CTA, méta-description. 450-600 mots.",
   "gallery": "Fiche galerie : TITRE:, DESCRIPTION SEO: (150-200 mots), ALT TEXT:, MOTS-CLÉS: (8-10 mots-clés locaux)"${emailField}
 }`;
-      let claudeData;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-api-key': key,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 2048,
-            messages: [{ role: 'user', content: prompt }]
-          })
-        });
-        if (resp.status === 429 || resp.status === 529) {
-          if (attempt < 3) {
-            await new Promise(r => setTimeout(r, attempt * 4000));
-            continue;
-          }
-          throw new Error('Limite Claude atteinte — attendez quelques secondes et réessayez.');
-        }
-        if (!resp.ok) throw new Error('Erreur API Claude ' + resp.status);
-        claudeData = await resp.json();
-        break;
-      }
-      const rawText = claudeData.content?.[0]?.text || '';
+      const gasResp = await fetch(BASE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'generateWithAI', prompt }),
+        redirect: 'follow'
+      });
+      if (!gasResp.ok) throw new Error('Erreur GAS ' + gasResp.status);
+      const gasJson = await gasResp.json();
+      if (gasJson.status !== 'ok') throw new Error(gasJson.message || 'Erreur génération IA');
+      const rawText = gasJson.text || '';
       const content = _parseClaudeJson(rawText) || { facebook: rawText };
       const contentId = 'MCT-' + Date.now();
       if (BASE_URL) {

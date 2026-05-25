@@ -522,19 +522,14 @@ const STRAT = (() => {
       </div>`;
   }
 
-  // ── Tab IA Claude ─────────────────────────────────────────
+  // ── Tab IA ────────────────────────────────────────────────
   function tabIA(s) {
-    const hasKey = !!(HEUREKA_CONFIG.CLAUDE_API_KEY && HEUREKA_CONFIG.CLAUDE_API_KEY.trim());
     return `
-      ${!hasKey ? `<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--orange)">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        Clé API manquante — ajoutez <code style="background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px">CLAUDE_API_KEY</code> dans <code style="background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px">config.js</code>
-      </div>` : ''}
       <div style="font-size:13px;color:var(--text-secondary);line-height:1.65;margin-bottom:20px">
-        Claude va analyser les données de cette stratégie et fournir des recommandations personnalisées basées sur vos résultats.
+        L'IA va analyser les données de cette stratégie et fournir des recommandations personnalisées basées sur vos résultats.
       </div>
-      <button class="btn btn-primary" onclick="STRAT.generateAnalysis()" ${!hasKey?'disabled':''}>
-        <i class="fa-solid fa-robot"></i> Analyser avec Claude IA
+      <button class="btn btn-primary" onclick="STRAT.generateAnalysis()">
+        <i class="fa-solid fa-robot"></i> Analyser avec l'IA
       </button>
       <div id="strat-ai-result" style="margin-top:20px"></div>`;
   }
@@ -626,44 +621,37 @@ const STRAT = (() => {
     await saveToSheet(s);
   }
 
-  // ── Appel Claude (helper interne) ────────────────────────
-  async function _callClaude(prompt) {
-    const key = (HEUREKA_CONFIG.CLAUDE_API_KEY || '').trim();
-    if (!key) throw new Error('CLAUDE_API_KEY manquante dans config.js');
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  // ── Appel IA via GAS (Gemini côté serveur) ───────────────
+  async function _callGAS(prompt) {
+    const url = HEUREKA_CONFIG.APPS_SCRIPT_URL;
+    if (!url) throw new Error('URL Apps Script manquante dans config.js');
+    const resp = await fetch(url, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'generateWithAI', prompt }),
+      redirect: 'follow'
     });
-    if (!resp.ok) throw new Error('Erreur API Claude ' + resp.status);
-    const data = await resp.json();
-    return data.content?.[0]?.text || '';
+    if (!resp.ok) throw new Error('Erreur GAS ' + resp.status);
+    const json = await resp.json();
+    if (json.status !== 'ok') throw new Error(json.message || 'Erreur génération IA');
+    return json.text || '';
   }
 
-  // ── AI analysis (Claude) ──────────────────────────────────
+  // ── AI analysis ───────────────────────────────────────────
   async function generateAnalysis() {
     const s = getById(currentId);
     if (!s) return;
-    if (!(HEUREKA_CONFIG.CLAUDE_API_KEY || '').trim()) { App.toast('Clé API Claude manquante dans config.js', 'error'); return; }
+    if (!HEUREKA_CONFIG.APPS_SCRIPT_URL) { App.toast('URL Apps Script manquante dans config.js', 'error'); return; }
 
     const resultEl = document.getElementById('strat-ai-result');
     if (resultEl) resultEl.innerHTML = `
       <div style="color:var(--text-muted);font-size:13px;padding:24px;text-align:center">
         <i class="fa-solid fa-spinner fa-spin" style="color:var(--gold);font-size:22px;margin-bottom:12px;display:block"></i>
-        Analyse en cours avec Claude...
+        Analyse en cours avec Gemini...
       </div>`;
 
     try {
-      const rawText = await _callClaude(buildPrompt(s));
+      const rawText = await _callGAS(buildPrompt(s));
       renderAnalysis(rawText);
     } catch(e) {
       const el = document.getElementById('strat-ai-result');
@@ -765,7 +753,7 @@ Réponds UNIQUEMENT avec ce JSON valide (sans markdown ni backticks) :
 {"etat_marche":"...","tendances":"...","concurrents":"...","opportunites":"...","recommandations":"..."}`;
 
     try {
-      const rawText = await _callClaude(prompt);
+      const rawText = await _callGAS(prompt);
       let data;
       try {
         const match = rawText.match(/\{[\s\S]*\}/);
