@@ -126,14 +126,15 @@ const App = (() => {
     btn.querySelector('i').classList.add('fa-spin');
     try {
       const result = await API.syncPipeline();
-      if (result.newProjects > 0) {
-        toast(`${result.newProjects} nouveau(x) projet(s) synchronisé(s) depuis Pipeline!`, 'success');
+      const lastCount = parseInt(localStorage.getItem('hm_pipeline_last_count') ?? '-1');
+      const currentCount = result.newProjects;
+      localStorage.setItem('hm_pipeline_last_count', currentCount);
+      if (lastCount >= 0 && currentCount > lastCount) {
+        const diff = currentCount - lastCount;
+        toast(`${diff} nouveau(x) projet(s) synchronisé(s) depuis Pipeline!`, 'success');
         document.getElementById('badge-generator').style.display = 'inline-flex';
-        document.getElementById('badge-generator').textContent = result.newProjects;
-      } else {
-        toast('Aucun nouveau projet — Pipeline à jour', 'info');
+        document.getElementById('badge-generator').textContent = diff;
       }
-      // Refresh dashboard if active
       if (currentModule === 'dashboard') Dashboard.refresh();
     } catch (err) {
       if (!API.isDemoMode()) toast(`Erreur sync Pipeline: ${err.message}`, 'error');

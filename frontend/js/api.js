@@ -104,8 +104,10 @@ const DEMO_MODE = false;
 // Simuler un délai réseau en mode démo
 const demoDelay = (data) => new Promise(resolve => setTimeout(() => resolve(data), 400));
 
-// Parse la réponse JSON de Gemini de façon robuste — gère les vrais \n dans les valeurs
-function _parseGeminiJson(text) {
+const HEUREKA_CONTEXT = `Les Gestions Heuréka est un entrepreneur général basé à Saint-Jean-sur-Richelieu (Québec), spécialisé en : portes & fenêtres, revêtement extérieur, gouttières/soffites/fascias, rénovation intérieure. Équipe à l'interne, aucun sous-traitant. Fondée en 1999. RBQ 5818-7162-01.`;
+
+// Parse la réponse JSON de Claude de façon robuste — gère les vrais \n dans les valeurs
+function _parseClaudeJson(text) {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
   const block = match[0];
@@ -167,11 +169,11 @@ const API = (() => {
     addProject: (p) => safe('addProject', () => post('addProject', {project:p}), { id: 'DEMO'+Date.now(), success: true }),
     updateProject: (id, d) => safe('updateProject', () => post('updateProject', {id, data:d}), { success: true }),
 
-    // ── Génération IA — appel Gemini direct depuis le navigateur ──
+    // ── Génération IA — appel Claude direct depuis le navigateur ──
     generateContent: async (projectId, projectData) => {
-      const key = (HEUREKA_CONFIG.GEMINI_API_KEY || '').trim();
+      const key = (HEUREKA_CONFIG.CLAUDE_API_KEY || '').trim();
       if (!key) {
-        console.warn('[API] GEMINI_API_KEY manquante — données démo');
+        console.warn('[API] CLAUDE_API_KEY manquante — données démo');
         return demoDelay({
           contentId: 'DEMO' + Date.now(),
           facebook: `🏠 Projet ${projectData.type || 'rénovation'} terminé à ${projectData.ville || 'Saint-Jean'}!\n\n${projectData.description || ''}\n\nUn projet réalisé avec passion par notre équipe des Gestions Heúrēka.\n\n📞 Soumission gratuite : gestionsheureka.net\n\n#GestionsHeureka #RenovationQuebec #SaintJeanSurRichelieu #Maison`,
@@ -182,7 +184,9 @@ const API = (() => {
       }
       const emailField = projectData.sendReviewEmail
         ? `,\n  "reviewEmail": "Email poli en français demandant un avis Google (3-4 phrases, mentionner le type de travaux et remercier le client)"` : '';
-      const prompt = `Tu es un expert en marketing de contenu pour Les Gestions Heúrēka, entrepreneur général en rénovation résidentielle au Québec (Saint-Jean-sur-Richelieu, Montérégie). RBQ 5818-7162-01.
+      const prompt = `${HEUREKA_CONTEXT}
+
+Tu es un expert en marketing de contenu pour Les Gestions Heúrēka.
 
 Un projet vient d'être terminé. Génère du contenu marketing professionnel et engageant en français québécois.
 
@@ -201,27 +205,35 @@ Réponds UNIQUEMENT avec ce JSON valide (sans balises markdown ni backticks auto
   "blog": "Article de blogue SEO complet : titre # H1, introduction, 3 sections ## H2, conclusion + CTA, méta-description. 450-600 mots.",
   "gallery": "Fiche galerie : TITRE:, DESCRIPTION SEO: (150-200 mots), ALT TEXT:, MOTS-CLÉS: (8-10 mots-clés locaux)"${emailField}
 }`;
-      let geminiData, lastStatus;
+      let claudeData;
       for (let attempt = 1; attempt <= 3; attempt++) {
-        const resp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-          { method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
-        );
-        lastStatus = resp.status;
-        if (resp.status === 429) {
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+        if (resp.status === 429 || resp.status === 529) {
           if (attempt < 3) {
             await new Promise(r => setTimeout(r, attempt * 4000));
             continue;
           }
-          throw new Error('Limite Gemini atteinte (429) — attendez 1 minute et réessayez. La clé gratuite permet ~15 requêtes/minute.');
+          throw new Error('Limite Claude atteinte — attendez quelques secondes et réessayez.');
         }
-        if (!resp.ok) throw new Error('Erreur API Gemini ' + resp.status);
-        geminiData = await resp.json();
+        if (!resp.ok) throw new Error('Erreur API Claude ' + resp.status);
+        claudeData = await resp.json();
         break;
       }
-      const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const content = _parseGeminiJson(rawText) || { facebook: rawText };
+      const rawText = claudeData.content?.[0]?.text || '';
+      const content = _parseClaudeJson(rawText) || { facebook: rawText };
       const contentId = 'MCT-' + Date.now();
       if (BASE_URL) {
         fetch(BASE_URL, {
