@@ -1,12 +1,11 @@
 /* ============================================
-   GENERATOR.JS — Générateur de projet terminé
+   GENERATOR.JS — Créateur de contenu
    ============================================ */
 
 const Generator = (() => {
   const view = () => document.getElementById('view-generator');
   let pendingProjects = [];
   let uploadedFiles = [];
-  let generatedContent = null;
   let drivePhotos = [];
 
   const TYPES = [
@@ -21,7 +20,6 @@ const Generator = (() => {
   function renderForm(project = {}) {
     return `
       <form id="generator-form">
-        <!-- Projets en attente de Pipeline -->
         ${pendingProjects.length > 0 ? `
           <div style="margin-bottom:20px">
             <div class="section-title">Projets reçus de Pipeline</div>
@@ -42,17 +40,17 @@ const Generator = (() => {
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Type de travaux *</label>
-            <select class="form-control" id="g-type" required>
+            <label class="form-label">Type de travaux</label>
+            <select class="form-control" id="g-type">
               <option value="">Sélectionner...</option>
               ${TYPES.map(t => `<option value="${t}" ${project.type === t ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Ville du projet *</label>
+            <label class="form-label">Ville du projet</label>
             <input type="text" class="form-control" id="g-ville"
               placeholder="ex: Saint-Jean-sur-Richelieu"
-              value="${project.ville || ''}" required>
+              value="${project.ville || ''}">
           </div>
         </div>
 
@@ -70,13 +68,11 @@ const Generator = (() => {
         </div>
 
         <div class="form-group">
-          <label class="form-label">Description courte du projet *</label>
+          <label class="form-label">Description du projet</label>
           <textarea class="form-control" id="g-desc" rows="3"
-            placeholder="Décrivez le projet : matériaux utilisés, défi particulier, résultat final..."
-            required>${project.description || ''}</textarea>
+            placeholder="Matériaux utilisés, défi particulier, résultat final...">${project.description || ''}</textarea>
         </div>
 
-        <!-- Upload photos -->
         <div class="form-group">
           <label class="form-label">Photos avant/après</label>
           <div class="upload-zone" id="upload-zone"
@@ -92,7 +88,6 @@ const Generator = (() => {
           <div class="file-preview" id="file-preview"></div>
         </div>
 
-        <!-- Photos depuis Drive (auto-chargées si chantier lié) -->
         ${drivePhotos.length > 0 ? `
         <div class="form-group">
           <label class="form-label" style="display:flex;align-items:center;gap:8px">
@@ -102,178 +97,63 @@ const Generator = (() => {
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
             ${drivePhotos.map(p => `
               <a href="${p.viewUrl}" target="_blank" title="${p.fileName}"
-                style="display:block;border-radius:6px;overflow:hidden;
-                       border:1px solid var(--black-border);flex-shrink:0">
+                style="display:block;border-radius:6px;overflow:hidden;border:1px solid var(--black-border);flex-shrink:0">
                 <img src="${p.thumbnailUrl}" alt="${p.fileName}"
                   style="width:80px;height:80px;object-fit:cover;display:block"
                   onerror="this.parentElement.style.display='none'" loading="lazy">
               </a>
             `).join('')}
           </div>
-          <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">
-            Cliquer pour ouvrir dans Drive · Les miniatures s'affichent si vous êtes connecté à Google
-          </div>
         </div>
         ` : ''}
-
-        <!-- Options de génération -->
-        <div class="section-title">Contenu à générer</div>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-          ${[
-            { id: 'gen-fb', label: 'Post Facebook', icon: 'fa-brands fa-facebook', checked: true },
-            { id: 'gen-tiktok', label: 'Script TikTok', icon: 'fa-brands fa-tiktok', checked: true },
-            { id: 'gen-blog', label: 'Article blogue', icon: 'fa-solid fa-newspaper', checked: true },
-            { id: 'gen-gallery', label: 'Fiche galerie SEO', icon: 'fa-solid fa-image', checked: true }
-          ].map(opt => `
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;
-              padding:8px 14px;background:var(--black-soft);border:1px solid var(--black-border);
-              border-radius:6px;font-size:13px;color:var(--text-secondary);transition:all 0.15s"
-              id="label-${opt.id}">
-              <input type="checkbox" id="${opt.id}" ${opt.checked ? 'checked' : ''}
-                style="accent-color:var(--gold)" onchange="Generator.toggleLabel('${opt.id}')">
-              <i class="${opt.icon}"></i> ${opt.label}
-            </label>
-          `).join('')}
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Infos supplémentaires pour l'IA (optionnel)</label>
-          <textarea class="form-control" id="g-extra" rows="2"
-            placeholder="Ex: projet primé, client très satisfait, technique innovante..."></textarea>
-        </div>
-
-        <!-- Email demande d'avis -->
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;
-          background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:8px;margin-top:8px">
-          <input type="checkbox" id="g-avis" checked style="accent-color:var(--green)">
-          <label for="g-avis" style="font-size:13px;cursor:pointer">
-            <strong style="color:var(--green)">Envoyer automatiquement une demande d'avis Google au client</strong>
-            <br><span style="color:var(--text-muted);font-size:11px">Un email personnalisé sera généré et envoyé via Gmail</span>
-          </label>
-        </div>
       </form>
     `;
   }
 
-  function renderResult(content) {
-    generatedContent = content;
+  function renderContentAreas() {
     return `
-      <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:var(--green)">
-            <i class="fa-solid fa-circle-check"></i> Contenu généré avec succès!
-          </div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
-            ${App.formatDate(new Date().toISOString())}
-          </div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="Generator.resetForm()">
-          <i class="fa-solid fa-plus"></i> Nouveau projet
-        </button>
-      </div>
-
-      ${content.facebook ? `
+      <div style="display:flex;flex-direction:column;gap:16px">
         <div class="content-block">
           <div class="content-block-header">
             <div class="content-block-title">
               <i class="fa-brands fa-facebook" style="color:#60A5FA"></i> Post Facebook
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost btn-sm btn-copy" onclick="App.copyToClipboard(document.getElementById('fb-text').textContent, this)">
+              <button class="btn btn-ghost btn-sm" onclick="App.copyToClipboard(document.getElementById('manual-fb').value)">
                 <i class="fa-solid fa-copy"></i> Copier
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="Generator.scheduleContent('facebook', '${content.contentId}')">
+              <button class="btn btn-secondary btn-sm" onclick="Generator.scheduleManual('facebook')">
                 <i class="fa-solid fa-calendar-plus"></i> Planifier
               </button>
             </div>
           </div>
           <div class="content-block-body">
-            <div class="content-text" id="fb-text">${escapeHtml(content.facebook)}</div>
+            <textarea id="manual-fb" class="form-control" rows="8"
+              placeholder="Rédigez votre post Facebook ici..."></textarea>
           </div>
         </div>
-      ` : ''}
 
-      ${content.tiktok ? `
         <div class="content-block">
           <div class="content-block-header">
             <div class="content-block-title">
               <i class="fa-brands fa-tiktok" style="color:var(--gold)"></i> Script TikTok
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-ghost btn-sm btn-copy" onclick="App.copyToClipboard(document.getElementById('tiktok-text').textContent, this)">
+              <button class="btn btn-ghost btn-sm" onclick="App.copyToClipboard(document.getElementById('manual-tiktok').value)">
                 <i class="fa-solid fa-copy"></i> Copier
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="Generator.scheduleContent('tiktok', '${content.contentId}')">
+              <button class="btn btn-secondary btn-sm" onclick="Generator.scheduleManual('tiktok')">
                 <i class="fa-solid fa-calendar-plus"></i> Planifier
               </button>
             </div>
           </div>
           <div class="content-block-body">
-            <div class="content-text" id="tiktok-text">${escapeHtml(content.tiktok)}</div>
+            <textarea id="manual-tiktok" class="form-control" rows="8"
+              placeholder="Rédigez votre script TikTok ici..."></textarea>
           </div>
         </div>
-      ` : ''}
-
-      ${content.blog ? `
-        <div class="content-block">
-          <div class="content-block-header">
-            <div class="content-block-title">
-              <i class="fa-solid fa-newspaper" style="color:var(--green)"></i> Article de blogue
-            </div>
-            <button class="btn btn-ghost btn-sm btn-copy" onclick="App.copyToClipboard(document.getElementById('blog-text').textContent, this)">
-              <i class="fa-solid fa-copy"></i> Copier
-            </button>
-          </div>
-          <div class="content-block-body">
-            <div class="content-text" id="blog-text">${escapeHtml(content.blog)}</div>
-          </div>
-        </div>
-      ` : ''}
-
-      ${content.gallery ? `
-        <div class="content-block">
-          <div class="content-block-header">
-            <div class="content-block-title">
-              <i class="fa-solid fa-image" style="color:var(--blue)"></i> Fiche galerie SEO
-            </div>
-            <button class="btn btn-ghost btn-sm btn-copy" onclick="App.copyToClipboard(document.getElementById('gallery-text').textContent, this)">
-              <i class="fa-solid fa-copy"></i> Copier
-            </button>
-          </div>
-          <div class="content-block-body">
-            <div class="content-text" id="gallery-text">${escapeHtml(content.gallery)}</div>
-          </div>
-        </div>
-      ` : ''}
-
-      ${content.reviewEmail ? `
-        <div class="content-block" style="border-color:rgba(34,197,94,0.3)">
-          <div class="content-block-header">
-            <div class="content-block-title">
-              <i class="fa-solid fa-envelope" style="color:var(--green)"></i> Email demande d'avis Google
-              <span class="tag tag-green" style="margin-left:8px">Envoyé</span>
-            </div>
-          </div>
-          <div class="content-block-body">
-            <div class="content-text">${escapeHtml(content.reviewEmail)}</div>
-          </div>
-        </div>
-      ` : ''}
+      </div>
     `;
-  }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-
-  function toggleLabel(id) {
-    const cb = document.getElementById(id);
-    const label = document.getElementById(`label-${id}`);
-    label.style.color = cb.checked ? 'var(--text-primary)' : 'var(--text-muted)';
-    label.style.borderColor = cb.checked ? 'rgba(212,175,55,0.4)' : 'var(--black-border)';
   }
 
   function handleDragOver(e) {
@@ -345,69 +225,10 @@ const Generator = (() => {
     }
   }
 
-  async function submitForm() {
-    const type = document.getElementById('g-type').value;
-    const ville = document.getElementById('g-ville').value;
-    const desc = document.getElementById('g-desc').value;
-
-    if (!type || !ville || !desc) {
-      App.toast('Veuillez remplir les champs obligatoires (*)', 'error');
-      return;
-    }
-
-    const projectData = {
-      type,
-      ville,
-      duree: document.getElementById('g-duree').value,
-      client: document.getElementById('g-client').value,
-      description: desc,
-      extra: document.getElementById('g-extra').value,
-      genFacebook: document.getElementById('gen-fb').checked,
-      genTiktok: document.getElementById('gen-tiktok').checked,
-      genBlog: document.getElementById('gen-blog').checked,
-      genGallery: document.getElementById('gen-gallery').checked,
-      sendReviewEmail: document.getElementById('g-avis').checked
-    };
-
-    App.showLoading('Gemini génère votre contenu marketing...');
-
-    try {
-      // Upload photos first
-      const photoUrls = [];
-      for (let i = 0; i < uploadedFiles.length; i++) {
-        const photoType = i === uploadedFiles.length - 1 ? 'apres' : 'avant';
-        const result = await API.uploadPhoto(uploadedFiles[i], 'new', photoType, type, ville);
-        photoUrls.push(result.url);
-      }
-      projectData.photoUrls = photoUrls;
-
-      const result = await API.generateContent(null, projectData);
-
-      App.hideLoading();
-      uploadedFiles = [];
-
-      const contentSection = document.getElementById('content-section');
-      contentSection.innerHTML = renderResult(result);
-      contentSection.scrollIntoView({ behavior: 'smooth' });
-
-      // Clear badge
-      document.getElementById('badge-generator').style.display = 'none';
-
-      App.toast('Contenu généré avec succès!', 'success');
-    } catch (err) {
-      App.hideLoading();
-      App.toast(`Erreur: ${err.message}`, 'error');
-      const cs = document.getElementById('content-section');
-      if (cs) cs.innerHTML = `
-        <div class="empty-state">
-          <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:32px"></i>
-          <h3 style="color:var(--red);margin-top:12px">Erreur de génération</h3>
-          <p style="max-width:320px;text-align:center;color:var(--text-secondary)">${err.message}</p>
-          <button class="btn btn-primary" style="margin-top:16px" onclick="Generator.submitForm()">
-            <i class="fa-solid fa-rotate-right"></i> Réessayer
-          </button>
-        </div>`;
-    }
+  function scheduleManual(platform) {
+    const text = document.getElementById(`manual-${platform}`)?.value?.trim();
+    if (!text) { App.toast('Rédigez d\'abord votre contenu', 'error'); return; }
+    scheduleContent(platform, 'manual_' + Date.now());
   }
 
   async function scheduleContent(platform, contentId) {
@@ -421,7 +242,7 @@ const Generator = (() => {
             min="${new Date().toISOString().split('T')[0]}">
         </div>
         <div class="form-group">
-          <label class="form-label">Heure (optionnel)</label>
+          <label class="form-label">Heure</label>
           <select class="form-control" id="schedule-time">
             <option value="08:00">08:00</option>
             <option value="12:00">12:00</option>
@@ -453,19 +274,12 @@ const Generator = (() => {
     }
   }
 
-  function resetForm() {
-    uploadedFiles = [];
-    generatedContent = null;
-    drivePhotos = [];
-    init();
-  }
-
   async function init() {
     view().innerHTML = `
       <div class="page-header">
         <div>
-          <div class="page-title">Générateur de projet terminé</div>
-          <div class="page-subtitle">Créez tout votre contenu marketing en un clic grâce à Gemini IA</div>
+          <div class="page-title">Créateur de contenu</div>
+          <div class="page-subtitle">Rédigez et planifiez vos publications Facebook et TikTok</div>
         </div>
       </div>
 
@@ -475,25 +289,14 @@ const Generator = (() => {
             <span class="card-title">Informations du projet</span>
           </div>
           <div id="form-section"></div>
-          <div style="display:flex;gap:10px;margin-top:20px">
-            <button class="btn btn-primary" style="flex:1" onclick="Generator.submitForm()">
-              <i class="fa-solid fa-wand-magic-sparkles"></i>
-              Générer avec Gemini IA
-            </button>
-          </div>
         </div>
 
         <div id="content-section">
-          <div class="empty-state">
-            <i class="fa-solid fa-wand-magic-sparkles" style="color:rgba(212,175,55,0.3)"></i>
-            <h3>Votre contenu apparaîtra ici</h3>
-            <p>Remplissez le formulaire et cliquez sur "Générer"</p>
-          </div>
+          ${renderContentAreas()}
         </div>
       </div>
     `;
 
-    // Load pending Pipeline projects
     try {
       const result = await API.getPipelineProjects();
       pendingProjects = result.projects || [];
@@ -502,11 +305,11 @@ const Generator = (() => {
     }
 
     document.getElementById('form-section').innerHTML = renderForm();
+    document.getElementById('badge-generator').style.display = 'none';
   }
 
   return {
-    init, submitForm, prefill, resetForm, scheduleContent, confirmSchedule,
-    toggleLabel, handleDragOver, handleDrop, handleFileSelect, removeFile,
-    getDrivePhotos: (driveId) => API.getChantierPhotos(driveId)
+    init, prefill, scheduleManual, scheduleContent, confirmSchedule,
+    handleDragOver, handleDrop, handleFileSelect, removeFile
   };
 })();

@@ -221,18 +221,7 @@ const STRAT = (() => {
       </div>
       <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">${filterBtns}</div>
       <div class="strat-grid">${cards}</div>
-      <div style="margin-top:36px;border-top:1px solid var(--black-border);padding-top:28px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-          <div>
-            <div style="font-size:18px;font-weight:700;color:var(--text-primary)">Analyse de marché &amp; Tendances</div>
-            <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Analyse IA du marché de la construction au Québec — générée par Gemini</div>
-          </div>
-          <button class="btn btn-primary" onclick="STRAT.analyzeMarket()">
-            <i class="fa-solid fa-robot"></i> Analyser le marché
-          </button>
-        </div>
-        <div id="strat-market-result"></div>
-      </div>`;
+    `;
   }
 
   // ── Create / Delete ──────────────────────────────────────
@@ -289,8 +278,7 @@ const STRAT = (() => {
       ['objectifs','fa-bullseye','Objectifs'],
       ['idees','fa-lightbulb','Idées'],
       ['actions','fa-list-check','Actions'],
-      ['resultats','fa-chart-pie','Résultats'],
-      ['ia','fa-robot','IA Gemini']
+      ['resultats','fa-chart-pie','Résultats']
     ];
     document.getElementById('strat-panel').innerHTML = `
       <div class="strat-panel-header">
@@ -330,7 +318,7 @@ const STRAT = (() => {
     if (!el) return;
     const s = getById(currentId);
     if (!s) return;
-    const renderers = { infos: tabInfos, objectifs: tabObjectifs, idees: tabIdees, actions: tabActions, resultats: tabResultats, ia: tabIA };
+    const renderers = { infos: tabInfos, objectifs: tabObjectifs, idees: tabIdees, actions: tabActions, resultats: tabResultats };
     el.innerHTML = renderers[currentTab] ? renderers[currentTab](s) : '';
   }
 
@@ -522,18 +510,6 @@ const STRAT = (() => {
       </div>`;
   }
 
-  // ── Tab IA ────────────────────────────────────────────────
-  function tabIA(s) {
-    return `
-      <div style="font-size:13px;color:var(--text-secondary);line-height:1.65;margin-bottom:20px">
-        L'IA va analyser les données de cette stratégie et fournir des recommandations personnalisées basées sur vos résultats.
-      </div>
-      <button class="btn btn-primary" onclick="STRAT.generateAnalysis()">
-        <i class="fa-solid fa-robot"></i> Analyser avec l'IA
-      </button>
-      <div id="strat-ai-result" style="margin-top:20px"></div>`;
-  }
-
   // ── CRUD helpers ─────────────────────────────────────────
   function updateField(field, value) {
     const s = getById(currentId);
@@ -621,206 +597,6 @@ const STRAT = (() => {
     await saveToSheet(s);
   }
 
-  // ── Appel IA via GAS (Gemini côté serveur) ───────────────
-  async function _callGAS(prompt) {
-    const url = HEUREKA_CONFIG.APPS_SCRIPT_URL;
-    if (!url) throw new Error('URL Apps Script manquante dans config.js');
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'generateWithAI', prompt }),
-      redirect: 'follow'
-    });
-    if (!resp.ok) throw new Error('Erreur GAS ' + resp.status);
-    const json = await resp.json();
-    if (json.status !== 'ok') throw new Error(json.message || 'Erreur génération IA');
-    return json.text || '';
-  }
-
-  // ── AI analysis ───────────────────────────────────────────
-  async function generateAnalysis() {
-    const s = getById(currentId);
-    if (!s) return;
-    if (!HEUREKA_CONFIG.APPS_SCRIPT_URL) { App.toast('URL Apps Script manquante dans config.js', 'error'); return; }
-
-    const resultEl = document.getElementById('strat-ai-result');
-    if (resultEl) resultEl.innerHTML = `
-      <div style="color:var(--text-muted);font-size:13px;padding:24px;text-align:center">
-        <i class="fa-solid fa-spinner fa-spin" style="color:var(--gold);font-size:22px;margin-bottom:12px;display:block"></i>
-        Analyse en cours avec Gemini...
-      </div>`;
-
-    try {
-      const rawText = await _callGAS(buildPrompt(s));
-      renderAnalysis(rawText);
-    } catch(e) {
-      const el = document.getElementById('strat-ai-result');
-      if (el) el.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px">
-        <i class="fa-solid fa-circle-xmark"></i> ${escHtml(e.message)}
-      </div>`;
-    }
-  }
-
-  function buildPrompt(s) {
-    const lp = s.leads_vises > 0 ? Math.round(s.leads_obtenus / s.leads_vises * 100) : 0;
-    const bp = s.budget_prevu > 0 ? Math.round(s.budget_reel / s.budget_prevu * 100) : 0;
-    const acts = s.actions || [];
-    const ap = acts.length > 0 ? Math.round(acts.filter(a => a.fait).length / acts.length * 100) : 0;
-    const ctx = typeof HEUREKA_CONTEXT !== 'undefined' ? HEUREKA_CONTEXT : 'Les Gestions Heuréka est un entrepreneur général basé à Saint-Jean-sur-Richelieu (Québec), spécialisé en : portes & fenêtres, revêtement extérieur, gouttières/soffites/fascias, rénovation intérieure. Équipe à l\'interne, aucun sous-traitant. Fondée en 1999.';
-    return `${ctx}
-
-Analyse cette stratégie marketing et fournis des conseils pratiques et concrets.
-
-STRATÉGIE: ${s.nom || 'Sans nom'}
-Statut: ${s.statut}
-Plateformes: ${(s.plateformes||[]).join(', ') || 'Non spécifié'}
-Objectif: ${s.objectif || 'Non spécifié'}
-Période: ${s.date_debut || '?'} → ${s.date_fin || '?'}
-
-RÉSULTATS vs OBJECTIFS:
-- Leads: ${s.leads_obtenus} obtenus / ${s.leads_vises} visés (${lp}%)
-- Projets signés: ${s.projets_signes} / ${s.projets_vises} visés
-- Budget utilisé: $${s.budget_reel} / $${s.budget_prevu} prévu (${bp}%)
-- Revenus réels: $${s.revenus_reels}
-
-ACTIONS: ${acts.length} total, ${acts.filter(a => a.fait).length} complétées (${ap}%)
-IDÉES notées: ${(s.idees||[]).length}
-Note bilan: ${s.note_bilan || 'Non évaluée'}
-Bilan: ${s.bilan_texte || 'Non rédigé'}
-Notes: ${s.notes || 'Aucune'}
-
-Réponds UNIQUEMENT avec ce JSON valide (aucun markdown autour) :
-{"bien_fonctionne":"Ce qui a bien fonctionné (2-3 points clés concrets)","ameliorations":"Pistes d'amélioration concrètes (2-3 points)","points_vigilance":"Points à surveiller pour la prochaine fois (2 points)","conseils":"Conseils stratégiques pour la prochaine campagne (2-3 conseils adaptés au secteur rénovation QC)"}`;
-  }
-
-  function renderAnalysis(text) {
-    const el = document.getElementById('strat-ai-result');
-    if (!el) return;
-    let data;
-    try {
-      const match = text.match(/\{[\s\S]*\}/);
-      data = JSON.parse(match ? match[0] : text);
-    } catch(e) {
-      el.innerHTML = `<div class="content-block"><div class="content-block-body"><div class="content-text">${escHtml(text)}</div></div></div>`;
-      return;
-    }
-    const sections = [
-      { key:'bien_fonctionne', icon:'fa-circle-check', color:'var(--green)', title:'Ce qui a bien fonctionné' },
-      { key:'ameliorations',   icon:'fa-arrow-trend-up', color:'var(--blue)', title:"Pistes d'amélioration" },
-      { key:'points_vigilance',icon:'fa-triangle-exclamation', color:'var(--orange)', title:'Points à surveiller' },
-      { key:'conseils',        icon:'fa-star', color:'var(--gold)', title:'Conseils stratégiques' }
-    ];
-    el.innerHTML = sections.map(sec => `
-      <div class="content-block" style="margin-bottom:12px">
-        <div class="content-block-header">
-          <div class="content-block-title" style="color:${sec.color}">
-            <i class="fa-solid ${sec.icon}"></i> ${sec.title}
-          </div>
-        </div>
-        <div class="content-block-body">
-          <div class="content-text">${escHtml(data[sec.key] || '—')}</div>
-        </div>
-      </div>`).join('');
-  }
-
-  // ── Analyse de marché ─────────────────────────────────────
-  let _lastMarketAnalysis = null;
-
-  async function analyzeMarket() {
-    const hasKey = !!(HEUREKA_CONFIG.CLAUDE_API_KEY && HEUREKA_CONFIG.CLAUDE_API_KEY.trim());
-    if (!HEUREKA_CONFIG.APPS_SCRIPT_URL) { App.toast('URL Apps Script manquante dans config.js', 'error'); return; }
-
-    const resultEl = document.getElementById('strat-market-result');
-    if (resultEl) resultEl.innerHTML = `
-      <div style="color:var(--text-muted);font-size:13px;padding:32px;text-align:center">
-        <i class="fa-solid fa-spinner fa-spin" style="color:var(--gold);font-size:28px;margin-bottom:14px;display:block"></i>
-        Analyse du marché en cours avec Gemini...
-      </div>`;
-
-    const ctx = typeof HEUREKA_CONTEXT !== 'undefined' ? HEUREKA_CONTEXT : 'Les Gestions Heuréka est un entrepreneur général basé à Saint-Jean-sur-Richelieu (Québec), spécialisé en : portes & fenêtres, revêtement extérieur, gouttières/soffites/fascias, rénovation intérieure. Équipe à l\'interne, aucun sous-traitant. Fondée en 1999. RBQ 5818-7162-01.';
-    const prompt = `${ctx}
-
-Fais une analyse complète et structurée du marché pour aider cette entreprise à développer sa stratégie marketing.
-
-Analyse ces 5 sections de façon concrète et actionnable :
-1. État du marché de la construction au Québec (entrepreneur général) — tendances économiques, volume d'activité, conditions actuelles
-2. Tendances clés — rénovation résidentielle, portes & fenêtres, revêtements extérieurs, gouttières/soffites/fascias, rénovation intérieure
-3. Positionnement des concurrents locaux — Saint-Jean-sur-Richelieu et la région de la Montérégie
-4. Opportunités de croissance spécifiques pour une équipe à l'interne (pas de sous-traitance) — segments porteurs, niches, saisonnalité
-5. Recommandations stratégiques spécifiques à Heuréka — marketing digital, réputation, croissance des avis Google, contenu social media
-
-Réponds UNIQUEMENT avec ce JSON valide (sans markdown ni backticks) :
-{"etat_marche":"...","tendances":"...","concurrents":"...","opportunites":"...","recommandations":"..."}`;
-
-    try {
-      const rawText = await _callGAS(prompt);
-      let data;
-      try {
-        const match = rawText.match(/\{[\s\S]*\}/);
-        data = JSON.parse(match ? match[0] : rawText);
-      } catch(e) { data = null; }
-      _lastMarketAnalysis = data ? rawText : null;
-      renderMarketAnalysis(data, rawText);
-    } catch(e) {
-      if (resultEl) resultEl.innerHTML = `<div style="color:var(--red);font-size:13px;padding:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px"><i class="fa-solid fa-circle-xmark"></i> ${escHtml(e.message)}</div>`;
-    }
-  }
-
-  function renderMarketAnalysis(data, rawText) {
-    const resultEl = document.getElementById('strat-market-result');
-    if (!resultEl) return;
-    if (!data) {
-      resultEl.innerHTML = `<div class="content-block"><div class="content-block-body"><div class="content-text">${escHtml(rawText||'')}</div></div></div>`;
-      return;
-    }
-    const sections = [
-      { key:'etat_marche',   icon:'fa-building', color:'var(--blue)',   title:'État du marché' },
-      { key:'tendances',     icon:'fa-arrow-trend-up', color:'var(--green)', title:'Tendances clés' },
-      { key:'concurrents',   icon:'fa-users',    color:'var(--orange)', title:'Concurrents locaux' },
-      { key:'opportunites',  icon:'fa-star',     color:'var(--gold)',   title:'Opportunités de croissance' },
-      { key:'recommandations',icon:'fa-chess-king',color:'var(--gold)', title:'Recommandations pour Heuréka' }
-    ];
-    const cardsHtml = sections.map(sec => `
-      <div class="content-block" style="margin-bottom:12px">
-        <div class="content-block-header">
-          <div class="content-block-title" style="color:${sec.color}">
-            <i class="fa-solid ${sec.icon}"></i> ${sec.title}
-          </div>
-        </div>
-        <div class="content-block-body">
-          <div class="content-text">${escHtml(data[sec.key] || '—')}</div>
-        </div>
-      </div>`).join('');
-
-    const stratOptions = strategies.length
-      ? strategies.map(s => `<option value="${s.id}">${escHtml(s.nom || 'Sans nom')}</option>`).join('')
-      : '<option value="">Aucune stratégie disponible</option>';
-
-    resultEl.innerHTML = cardsHtml + `
-      <div style="margin-top:16px;padding:14px 16px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:var(--radius);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <i class="fa-solid fa-link" style="color:var(--gold)"></i>
-        <span style="font-size:13px;color:var(--text-secondary);flex-shrink:0">Lier à une stratégie :</span>
-        <select id="market-link-strat" class="form-control" style="flex:1;min-width:160px;max-width:280px;padding:6px 10px;font-size:12px">
-          <option value="">Choisir une stratégie...</option>
-          ${stratOptions}
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="STRAT.saveMarketToStrategy()">
-          <i class="fa-solid fa-floppy-disk"></i> Lier l'analyse
-        </button>
-      </div>`;
-  }
-
-  function saveMarketToStrategy() {
-    const sel = document.getElementById('market-link-strat');
-    if (!sel || !sel.value) { App.toast('Sélectionnez une stratégie', 'error'); return; }
-    const s = getById(sel.value);
-    if (!s || !_lastMarketAnalysis) return;
-    s.notes = (s.notes ? s.notes + '\n\n---\nANALYSE DE MARCHÉ (' + new Date().toLocaleDateString('fr-CA') + ') :\n' : '') + _lastMarketAnalysis;
-    save();
-    saveToSheet(s);
-    App.toast('Analyse liée à la stratégie ✓', 'success');
-  }
-
   // ── Utils ─────────────────────────────────────────────────
   function escHtml(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -841,8 +617,6 @@ Réponds UNIQUEMENT avec ce JSON valide (sans markdown ni backticks) :
     updateField, togglePlatform,
     addIdee, toggleIdee, deleteIdee,
     addAction, toggleAction, deleteAction,
-    saveFromPanel, generateAnalysis,
-    analyzeMarket, saveMarketToStrategy,
-    setFilter, refreshResultats
+    saveFromPanel, setFilter, refreshResultats
   };
 })();
